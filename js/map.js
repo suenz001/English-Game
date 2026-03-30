@@ -1,0 +1,521 @@
+import { FLOOR_CONFIG, GAME_CONSTANTS, STARTER_DECK, ENEMIES, WORD_CARDS, getAllWordCards, getActiveWordCards, getPlayerCollection, savePlayerCollection, getPlayerDeckConfig, savePlayerDeckConfig } from './data.js';
+import { initBattle, showCardReward } from './battle.js';
+import { getCardArt } from './cardart.js';
+
+let gameState = null;
+let onGameOver = null;
+let mapData = null; // 分岔地圖資料
+
+// ===== 節點類型 =====
+const NODE_TYPES = {
+    BATTLE: 'battle',
+    REST: 'rest',
+    MYSTERY: 'mystery', // 顯示為 ❓
+    BOSS: 'boss',
+};
+
+// 未知事件類型
+const MYSTERY_EVENTS = ['card_reward', 'card_remove', 'merchant', 'blessing'];
+
+// ===== 產生分岔地圖 =====
+function generateMap(totalFloors) {
+    const map = [];
+
+    // 第1層固定1個戰鬥
+    map.push([{ id: '0-0', type: NODE_TYPES.BATTLE, col: 1, connections: [] }]);
+
+    // 中間層：2-4 節點，分分合合
+    for (let floor = 1; floor < totalFloors - 1; floor++) {
+        const numNodes = floor === totalFloors - 2 ? 2 : Math.min(2 + Math.floor(Math.random() * 3), 4); // 2-4
+        const row = [];
+        for (let col = 0; col < numNodes; col++) {
+            let type;
+            // 每3層左右安排休息，BOSS前一層安排休息
+            if (floor === totalFloors - 2) {
+                type = col === 0 ? NODE_TYPES.REST : NODE_TYPES.MYSTERY;
+            } else if (floor % 3 === 2 && col === 0) {
+                type = NODE_TYPES.REST;
+            } else if (Math.random() < 0.35) {
+                type = NODE_TYPES.MYSTERY;
+            } else {
+                type = NODE_TYPES.BATTLE;
+            }
+            row.push({ id: `${floor}-${col}`, type, col, connections: [] });
+        }
+        map.push(row);
+    }
+
+    // 最後一層：BOSS
+    map.push([{ id: `${totalFloors - 1}-0`, type: NODE_TYPES.BOSS, col: 1, connections: [] }]);
+
+    // 建立連線（每個節點連到下一層的 1-2 個節點）
+    for (let floor = 0; floor < map.length - 1; floor++) {
+        const currentRow = map[floor];
+        const nextRow = map[floor + 1];
+
+        // 確保每個當前節點至少有一個連線
+        currentRow.forEach((node, ci) => {
+            // 計算最近的下一層節點
+            const ratio = nextRow.length === 1 ? 0 : ci / Math.max(currentRow.length - 1, 1);
+            const targetIdx = Math.round(ratio * (nextRow.length - 1));
+            node.connections.push(nextRow[targetIdx].id);
+
+            // 有機率連到相鄰節點（分岔）
+            if (targetIdx > 0 && Math.random() < 0.4) {
+                node.connections.push(nextRow[targetIdx - 1].id);
+            }
+            if (targetIdx < nextRow.length - 1 && Math.random() < 0.4) {
+                node.connections.push(nextRow[targetIdx + 1].id);
+            }
+
+            // 去重
+            node.connections = [...new Set(node.connections)];
+        });
+
+        // 確保下一層每個節點至少被一個連到
+        nextRow.forEach(nextNode => {
+            const hasIncoming = currentRow.some(n => n.connections.includes(nextNode.id));
+            if (!hasIncoming) {
+                // 找最近的上層節點連過來
+                const closestIdx = currentRow.reduce((best, n, i) =>
+                    Math.abs(n.col - nextNode.col) < Math.abs(currentRow[best].col - nextNode.col) ? i : best, 0);
+                currentRow[closestIdx].connections.push(nextNode.id);
+            }
+        });
+    }
+
+    return map;
+}
+
+// ===== 開始新遊戲 =====
+export function startNewRun(callback) {
+    onGameOver = callback;
+
+    let deckConfig = getPlayerDeckConfig();
+    const activeCards = getActiveWordCards();
+    const activeIds = new Set(activeCards.map(c => c.id));
+
+    if (deckConfig.length === 0) {
+        deckConfig = STARTER_DECK.filter(id => activeIds.has(id));
+        if (deckConfig.length < 5) deckConfig = STARTER_DECK;
+    } else {
+        deckConfig = deckConfig.filter(id => activeIds.has(id));
+        if (deckConfig.length < 5) deckConfig = STARTER_DECK.filter(id => activeIds.has(id));
+    }
+
+    mapData = generateMap(FLOOR_CONFIG.length);
+
+    gameState = {
+        currentFloor: -1, // -1 = 還沒開始
+        currentNodeId: null,
+        visitedNodes: new Set(),
+        maxFloor: FLOOR_CONFIG.length,
+        playerHp: GAME_CONSTANTS.STARTING_HP,
+        playerMaxHp: GAME_CONSTANTS.MAX_HP,
+        playerGold: 30, // 起始金幣給商人用
+        playerDeck: [...deckConfig],
+        playerBuffs: { strength: 0, regen: 0, thorns: 0 },
+        newCardIds: [],
+    };
+    showMap();
+}
+
+// ===== 取得可點擊的下一層節點 =====
+function getAvailableNodes() {
+    if (gameState.currentFloor === -1) {
+        return mapData[0]; // 第一層
+    }
+    const currentRow = mapData[gameState.currentFloor];
+    const currentNode = currentRow.find(n => n.id === gameState.currentNodeId);
+    if (!currentNode) return [];
+    const nextFloor = gameState.currentFloor + 1;
+    if (nextFloor >= mapData.length) return [];
+    return mapData[nextFloor].filter(n => currentNode.connections.includes(n.id));
+}
+
+// ===== 地圖畫面 =====
+export function showMap() {
+    const s = gameState;
+    const mapScreen = document.getElementById('map-screen');
+    const battleScreen = document.getElementById('battle-screen');
+    battleScreen.classList.add('hidden');
+    mapScreen.classList.remove('hidden');
+
+    document.getElementById('map-hp').textContent = `❤️ ${s.playerHp}/${s.playerMaxHp}`;
+    document.getElementById('map-gold').textContent = `💰 ${s.playerGold}`;
+    document.getElementById('map-deck-count').textContent = `📚 ${s.playerDeck.length} 張牌`;
+
+    const nodesEl = document.getElementById('map-nodes');
+    nodesEl.innerHTML = '';
+
+    const availableIds = new Set(getAvailableNodes().map(n => n.id));
+
+    // 從最後一層往上畫（底部是第1層）
+    for (let floor = mapData.length - 1; floor >= 0; floor--) {
+        const row = mapData[floor];
+        const rowEl = document.createElement('div');
+        rowEl.className = 'map-row';
+
+        // 連線 SVG
+        if (floor < mapData.length - 1) {
+            const connEl = document.createElement('div');
+            connEl.className = 'map-connectors';
+            const nextRow = mapData[floor + 1];
+            row.forEach(node => {
+                node.connections.forEach(targetId => {
+                    const target = nextRow.find(n => n.id === targetId);
+                    if (!target) return;
+                    const line = document.createElement('div');
+                    line.className = 'map-line';
+                    const fromPct = (node.col + 0.5) / Math.max(row.length, 1) * 100;
+                    const toPct = (target.col + 0.5) / Math.max(nextRow.length, 1) * 100;
+                    line.style.cssText = `left:${Math.min(fromPct,toPct)}%;width:${Math.abs(toPct-fromPct) || 2}%;`;
+                    if (s.visitedNodes.has(node.id) && s.visitedNodes.has(targetId)) line.classList.add('visited');
+                    connEl.appendChild(line);
+                });
+            });
+            nodesEl.appendChild(connEl);
+        }
+
+        row.forEach(node => {
+            const isVisited = s.visitedNodes.has(node.id);
+            const isAvailable = availableIds.has(node.id);
+            const isCurrent = node.id === s.currentNodeId;
+
+            let emoji, label;
+            switch (node.type) {
+                case NODE_TYPES.BOSS:
+                    emoji = '🐉'; label = 'BOSS'; break;
+                case NODE_TYPES.REST:
+                    emoji = '🏕️'; label = '休息'; break;
+                case NODE_TYPES.MYSTERY:
+                    emoji = '❓'; label = '未知'; break;
+                default: {
+                    const config = FLOOR_CONFIG[Math.min(floor, FLOOR_CONFIG.length - 1)];
+                    const enemyKey = config.enemies[Math.floor(Math.random() * config.enemies.length)];
+                    emoji = ENEMIES[enemyKey]?.emoji || '⚔️';
+                    label = '戰鬥';
+                }
+            }
+
+            const nodeEl = document.createElement('div');
+            nodeEl.className = `map-node${isVisited ? ' completed' : ''}${isAvailable ? ' current' : ''}${isCurrent ? ' active' : ''}${node.type === 'boss' ? ' boss' : ''}`;
+            nodeEl.innerHTML = `
+                <div class="node-emoji">${isVisited ? '✅' : emoji}</div>
+                <div class="node-type">F${floor + 1} ${label}</div>
+            `;
+
+            if (isAvailable && !isVisited) {
+                nodeEl.addEventListener('click', () => selectNode(node, floor));
+            }
+
+            rowEl.appendChild(nodeEl);
+        });
+
+        nodesEl.appendChild(rowEl);
+    }
+}
+
+// ===== 選擇節點 =====
+function selectNode(node, floor) {
+    gameState.currentFloor = floor;
+    gameState.currentNodeId = node.id;
+    gameState.visitedNodes.add(node.id);
+
+    switch (node.type) {
+        case NODE_TYPES.BATTLE:
+        case NODE_TYPES.BOSS:
+            enterBattle(floor + 1);
+            break;
+        case NODE_TYPES.REST:
+            showRestScreen(floor + 1);
+            break;
+        case NODE_TYPES.MYSTERY:
+            triggerMysteryEvent(floor + 1);
+            break;
+    }
+}
+
+// ===== 未知事件 =====
+function triggerMysteryEvent(floor) {
+    const event = MYSTERY_EVENTS[Math.floor(Math.random() * MYSTERY_EVENTS.length)];
+    switch (event) {
+        case 'card_reward': showMysteryCardReward(floor); break;
+        case 'card_remove': showCardRemoveEvent(); break;
+        case 'merchant': showMerchantEvent(floor); break;
+        case 'blessing': showBlessingEvent(); break;
+    }
+}
+
+// --- 卡牌獎勵事件 ---
+function showMysteryCardReward(floor) {
+    const vocabDiff = FLOOR_CONFIG[Math.min(floor - 1, FLOOR_CONFIG.length - 1)].vocabDifficulty;
+    showEventModal('🃏 卡牌寶箱', '你發現了一個寶箱！選一張新卡加入牌組。', () => {
+        showCardReward(gameState.playerDeck, vocabDiff, (cardId) => {
+            if (cardId) {
+                gameState.playerDeck.push(cardId);
+                gameState.newCardIds.push(cardId);
+                const coll = getPlayerCollection(); coll.push(cardId); savePlayerCollection(coll);
+                const dc = getPlayerDeckConfig(); dc.push(cardId); savePlayerDeckConfig(dc);
+            }
+            showMap();
+        });
+    });
+}
+
+// --- 刪除卡牌事件 ---
+function showCardRemoveEvent() {
+    const modal = document.getElementById('event-modal');
+    const allCards = getAllWordCards();
+    modal.querySelector('.event-title').textContent = '🗑️ 淨化祭壇';
+    modal.querySelector('.event-desc').textContent = '選擇一張卡牌從牌組中移除。';
+    const bodyEl = modal.querySelector('.event-body');
+
+    const counts = {};
+    gameState.playerDeck.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
+
+    bodyEl.innerHTML = Object.entries(counts).map(([id, count]) => {
+        const card = allCards.find(c => c.id === id);
+        if (!card) return '';
+        const typeLabel = { attack: '⚔️', defend: '🛡️', skill: '✨', power: '💜' }[card.type] || '';
+        return `<div class="event-card" data-id="${id}">
+            <span class="event-card-emoji">${card.emoji}</span>
+            <span class="event-card-name">${typeLabel} ${card.en} (${card.zh})</span>
+            <span class="event-card-count">x${count}</span>
+        </div>`;
+    }).join('');
+
+    // 跳過按鈕
+    bodyEl.innerHTML += '<button class="event-skip-btn">⏭️ 跳過不刪</button>';
+
+    modal.classList.remove('hidden');
+
+    bodyEl.querySelectorAll('.event-card').forEach(el => {
+        el.addEventListener('click', () => {
+            const idx = gameState.playerDeck.indexOf(el.dataset.id);
+            if (idx >= 0) gameState.playerDeck.splice(idx, 1);
+            modal.classList.add('hidden');
+            showMap();
+        });
+    });
+
+    bodyEl.querySelector('.event-skip-btn').addEventListener('click', () => {
+        modal.classList.add('hidden');
+        showMap();
+    });
+}
+
+// --- 商人事件 ---
+function showMerchantEvent(floor) {
+    const modal = document.getElementById('event-modal');
+    modal.querySelector('.event-title').textContent = '🏪 神秘商人';
+    modal.querySelector('.event-desc').textContent = `💰 你的金幣：${gameState.playerGold}`;
+    const bodyEl = modal.querySelector('.event-body');
+
+    const vocabDiff = FLOOR_CONFIG[Math.min(floor - 1, FLOOR_CONFIG.length - 1)].vocabDifficulty;
+    const activeCards = getActiveWordCards();
+    const shopCards = shuffleArray(activeCards.filter(c => c.difficulty <= vocabDiff)).slice(0, 3);
+
+    let html = '<div class="merchant-items">';
+
+    // 卡牌商品
+    shopCards.forEach(card => {
+        const price = 15 + card.difficulty * 10;
+        html += `<div class="merchant-item card-item" data-id="${card.id}" data-price="${price}">
+            <span>${card.emoji} ${card.en}</span>
+            <span class="merchant-price">💰${price}</span>
+        </div>`;
+    });
+
+    // 回血商品
+    html += `<div class="merchant-item heal-item" data-price="20">
+        <span>❤️ 回復 15 HP</span>
+        <span class="merchant-price">💰20</span>
+    </div>`;
+
+    // 刪卡服務
+    html += `<div class="merchant-item remove-item" data-price="30">
+        <span>🗑️ 刪除一張卡</span>
+        <span class="merchant-price">💰30</span>
+    </div>`;
+
+    html += '</div><button class="event-skip-btn">👋 離開商店</button>';
+    bodyEl.innerHTML = html;
+    modal.classList.remove('hidden');
+
+    bodyEl.querySelectorAll('.card-item').forEach(el => {
+        el.addEventListener('click', () => {
+            const price = parseInt(el.dataset.price);
+            if (gameState.playerGold < price) { el.style.animation = 'shake 0.3s'; return; }
+            gameState.playerGold -= price;
+            gameState.playerDeck.push(el.dataset.id);
+            const coll = getPlayerCollection(); coll.push(el.dataset.id); savePlayerCollection(coll);
+            el.remove();
+            modal.querySelector('.event-desc').textContent = `💰 你的金幣：${gameState.playerGold}`;
+        });
+    });
+
+    bodyEl.querySelector('.heal-item')?.addEventListener('click', function() {
+        if (gameState.playerGold < 20) { this.style.animation = 'shake 0.3s'; return; }
+        gameState.playerGold -= 20;
+        gameState.playerHp = Math.min(gameState.playerMaxHp, gameState.playerHp + 15);
+        this.remove();
+        modal.querySelector('.event-desc').textContent = `💰 你的金幣：${gameState.playerGold}`;
+    });
+
+    bodyEl.querySelector('.remove-item')?.addEventListener('click', function() {
+        if (gameState.playerGold < 30) { this.style.animation = 'shake 0.3s'; return; }
+        gameState.playerGold -= 30;
+        modal.classList.add('hidden');
+        showCardRemoveEvent();
+    });
+
+    bodyEl.querySelector('.event-skip-btn').addEventListener('click', () => {
+        modal.classList.add('hidden');
+        showMap();
+    });
+}
+
+// --- 祝福事件 ---
+function showBlessingEvent() {
+    const blessings = [
+        { text: '💪 力量祝福：永久攻擊力 +1', apply: () => { gameState.playerBuffs.strength += 1; } },
+        { text: '❤️ 生命祝福：最大HP +5 並回滿', apply: () => { gameState.playerMaxHp += 5; gameState.playerHp = gameState.playerMaxHp; } },
+        { text: '🌿 再生祝福：每回合回復 1 HP', apply: () => { gameState.playerBuffs.regen += 1; } },
+        { text: '🌹 荊棘祝福：受擊反彈 2 傷害', apply: () => { gameState.playerBuffs.thorns += 2; } },
+        { text: '💰 財富祝福：獲得 30 金幣', apply: () => { gameState.playerGold += 30; } },
+    ];
+    const blessing = blessings[Math.floor(Math.random() * blessings.length)];
+
+    showEventModal('⭐ 神秘祝福', blessing.text, () => {
+        blessing.apply();
+        showMap();
+    });
+}
+
+// --- 通用事件 Modal ---
+function showEventModal(title, desc, onConfirm) {
+    const modal = document.getElementById('event-modal');
+    modal.querySelector('.event-title').textContent = title;
+    modal.querySelector('.event-desc').textContent = desc;
+    modal.querySelector('.event-body').innerHTML = '<button class="event-confirm-btn">✅ 確認</button>';
+    modal.classList.remove('hidden');
+
+    modal.querySelector('.event-confirm-btn').addEventListener('click', () => {
+        modal.classList.add('hidden');
+        onConfirm();
+    });
+}
+
+// ===== 休息 =====
+function showRestScreen(floor) {
+    const s = gameState;
+    const modal = document.getElementById('rest-modal');
+    modal.classList.remove('hidden');
+
+    const healAmount = GAME_CONSTANTS.REST_HEAL_AMOUNT;
+    modal.querySelector('.rest-info').textContent =
+        `回復 ${healAmount} HP (${s.playerHp}→${Math.min(s.playerMaxHp, s.playerHp + healAmount)})`;
+
+    const restBtn = modal.querySelector('.rest-btn');
+    const skipBtn = modal.querySelector('.skip-rest-btn');
+    const newRest = restBtn.cloneNode(true);
+    restBtn.parentNode.replaceChild(newRest, restBtn);
+    const newSkip = skipBtn.cloneNode(true);
+    skipBtn.parentNode.replaceChild(newSkip, skipBtn);
+
+    newRest.addEventListener('click', () => {
+        s.playerHp = Math.min(s.playerMaxHp, s.playerHp + healAmount);
+        modal.classList.add('hidden');
+        showMap();
+    });
+    newSkip.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        showMap();
+    });
+}
+
+// ===== 戰鬥 =====
+function enterBattle(floor) {
+    document.getElementById('map-screen').classList.add('hidden');
+    document.getElementById('battle-screen').classList.remove('hidden');
+
+    initBattle(
+        floor, gameState.playerDeck, gameState.playerHp, gameState.playerMaxHp,
+        gameState.playerGold, gameState.playerBuffs, gameState.newCardIds,
+        (result) => handleBattleResult(result, floor)
+    );
+}
+
+function handleBattleResult(result, floor) {
+    if (result.victory) {
+        gameState.playerHp = result.playerHp;
+        gameState.playerGold += result.goldEarned;
+        gameState.playerDeck = result.deck;
+        gameState.playerBuffs = result.buffs;
+
+        if (floor >= gameState.maxFloor) { showGameComplete(); return; }
+
+        const resultModal = document.getElementById('battle-result-modal');
+        const continueBtn = resultModal.querySelector('.continue-btn');
+        const newBtn = continueBtn.cloneNode(true);
+        continueBtn.parentNode.replaceChild(newBtn, continueBtn);
+
+        newBtn.addEventListener('click', () => {
+            resultModal.classList.add('hidden');
+            showCardReward(gameState.playerDeck, FLOOR_CONFIG[Math.min(floor - 1, FLOOR_CONFIG.length - 1)].vocabDifficulty, (cardId) => {
+                if (cardId) {
+                    gameState.playerDeck.push(cardId);
+                    gameState.newCardIds.push(cardId);
+                    const coll = getPlayerCollection(); coll.push(cardId); savePlayerCollection(coll);
+                    const dc = getPlayerDeckConfig(); dc.push(cardId); savePlayerDeckConfig(dc);
+                }
+                showMap();
+            });
+        });
+    } else {
+        const resultModal = document.getElementById('battle-result-modal');
+        const continueBtn = resultModal.querySelector('.continue-btn');
+        const newBtn = continueBtn.cloneNode(true);
+        continueBtn.parentNode.replaceChild(newBtn, continueBtn);
+        newBtn.addEventListener('click', () => {
+            resultModal.classList.add('hidden');
+            if (onGameOver) onGameOver({ floor, victory: false });
+        });
+    }
+}
+
+function showGameComplete() {
+    const resultModal = document.getElementById('battle-result-modal');
+    resultModal.querySelector('.result-title').textContent = '🏆 通關！';
+    resultModal.querySelector('.result-title').className = 'result-title victory';
+    resultModal.querySelector('.result-details').innerHTML = `
+        <p>🎉 恭喜你擊敗了龍王！</p>
+        <p>❤️ 剩餘HP: ${gameState.playerHp}</p>
+        <p>💰 金幣: ${gameState.playerGold}</p>
+        <p>📚 學會了 ${gameState.playerDeck.length} 個單字</p>
+    `;
+    resultModal.classList.remove('hidden');
+
+    const continueBtn = resultModal.querySelector('.continue-btn');
+    const newBtn = continueBtn.cloneNode(true);
+    continueBtn.parentNode.replaceChild(newBtn, continueBtn);
+    newBtn.textContent = '🔄 再來一局';
+    newBtn.addEventListener('click', () => {
+        resultModal.classList.add('hidden');
+        if (onGameOver) onGameOver({ victory: true });
+    });
+}
+
+function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+export function getGameState() {
+    return gameState;
+}

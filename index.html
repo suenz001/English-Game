@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>英文勇者塔 - Vocab Spire</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+    <!-- ===== 使用者狀態列 ===== -->
+    <div id="user-bar" class="user-bar">
+        <button id="login-btn" class="login-btn">🔐 登入/註冊</button>
+        <div id="user-info" class="user-info hidden">
+            <span id="user-email" class="user-email"></span>
+            <button id="logout-btn" class="logout-btn">登出</button>
+        </div>
+    </div>
+
+    <!-- ===== 標題畫面 ===== -->
+    <div id="title-screen">
+        <div class="game-title">英文勇者塔</div>
+        <div class="game-subtitle">⚔️ Vocab Spire ⚔️</div>
+        <button id="start-btn">🎮 開始冒險</button>
+        <div class="title-buttons">
+            <button class="secondary-btn" id="help-btn">📖 說明</button>
+            <button class="secondary-btn" id="deck-editor-btn">🃏 編輯牌組</button>
+            <button class="secondary-btn" id="admin-btn">⚙️ 家長設定</button>
+        </div>
+    </div>
+
+    <!-- ===== 地圖畫面 ===== -->
+    <div id="map-screen" class="hidden">
+        <div class="map-title">🗺️ 冒險地圖</div>
+        <div class="map-header">
+            <span id="map-hp">❤️ 60/60</span>
+            <span id="map-gold">💰 0</span>
+            <span id="map-deck-count">📚 10 張牌</span>
+        </div>
+        <div id="map-nodes"></div>
+        <button class="map-deck-btn" id="view-deck-btn">📋 查看牌組</button>
+    </div>
+
+    <!-- ===== 戰鬥畫面 ===== -->
+    <div id="battle-screen" class="hidden">
+        <!-- 頂部資訊 -->
+        <div class="battle-top-bar">
+            <span id="floor-info">第 1 層</span>
+            <span id="player-energy">⚡ 3/3</span>
+            <button id="quit-battle-btn" class="quit-btn">🚪 離開</button>
+        </div>
+
+        <!-- 敵人區域（動態生成）-->
+        <div class="enemy-area"></div>
+
+        <!-- 戰鬥特效層 -->
+        <div id="battle-fx" class="battle-fx"></div>
+
+        <!-- 玩家區域 -->
+        <div class="player-area">
+            <div class="player-sprite">🧙‍♂️</div>
+            <div class="player-hp-bar">
+                <div id="player-hp-fill" class="player-hp-fill" style="width: 100%"></div>
+                <span id="player-hp-text" class="player-hp-text">60/60</span>
+            </div>
+            <div class="player-stats">
+                <span id="player-block"></span>
+                <span id="player-buffs" class="player-buffs"></span>
+            </div>
+        </div>
+
+        <!-- 手牌 -->
+        <div class="hand-area">
+            <div id="hand-cards"></div>
+        </div>
+
+        <!-- 底部 -->
+        <div class="battle-bottom-bar">
+            <div class="deck-discard">
+                <span id="deck-count">📚 10</span>
+                <span id="discard-count">🗑️ 0</span>
+            </div>
+            <button id="end-turn-btn">結束回合</button>
+        </div>
+
+        <!-- 戰鬥日誌（底部）-->
+        <div id="battle-log" class="battle-log"></div>
+    </div>
+
+    <!-- ===== 英文問答 Modal ===== -->
+    <div id="quiz-modal" class="hidden">
+        <div class="quiz-container">
+            <div id="quiz-phase" class="quiz-phase"></div>
+            <div id="quiz-timer" class="quiz-timer">⏱️ 15</div>
+            <button id="quiz-speak-btn" class="quiz-speak-btn hidden">🔊 再聽一次</button>
+            <div id="quiz-question"></div>
+            <div id="quiz-options"></div>
+            <div id="quiz-feedback" class="quiz-feedback"></div>
+        </div>
+    </div>
+
+    <!-- ===== 戰鬥結果 Modal ===== -->
+    <div id="battle-result-modal" class="hidden">
+        <div class="result-container">
+            <div class="result-title"></div>
+            <div class="result-details"></div>
+            <button class="continue-btn">繼續</button>
+        </div>
+    </div>
+
+    <!-- ===== 卡牌獎勵 Modal ===== -->
+    <div id="reward-modal" class="hidden">
+        <div class="reward-container">
+            <div class="reward-title">🎁 選擇一張新卡牌</div>
+            <div class="reward-cards"></div>
+            <button class="skip-reward">跳過</button>
+        </div>
+    </div>
+
+    <!-- ===== 休息 Modal ===== -->
+    <div id="rest-modal" class="hidden">
+        <div class="rest-container">
+            <div class="rest-emoji">🏕️</div>
+            <div class="rest-title">營火休息</div>
+            <div class="rest-info"></div>
+            <button class="rest-btn">🔥 休息回血</button>
+            <button class="skip-rest-btn">跳過</button>
+        </div>
+    </div>
+
+    <!-- ===== 事件 Modal ===== -->
+    <div id="event-modal" class="hidden">
+        <div class="event-container">
+            <div class="event-title">❓ 未知事件</div>
+            <div class="event-desc"></div>
+            <div class="event-body"></div>
+        </div>
+    </div>
+
+    <!-- ===== 牌組 Modal ===== -->
+    <div id="deck-modal" class="hidden">
+        <div class="deck-container">
+            <div class="deck-title">📋 我的牌組</div>
+            <div class="deck-cards"></div>
+            <button id="close-deck-btn">關閉</button>
+        </div>
+    </div>
+
+    <!-- ===== 編輯牌組 Modal ===== -->
+    <div id="deck-editor-modal" class="hidden">
+        <div class="deck-editor-container">
+            <div class="deck-editor-title">🃏 編輯牌組</div>
+
+            <div class="deck-zone">
+                <h3>⚔️ 上陣牌組 (<span id="de-deck-count">0</span>張) <small>最少8張</small></h3>
+                <div id="de-deck-cards" class="de-grid"></div>
+                <div id="de-deck-empty" class="de-empty">點擊下方牌庫中的卡片來加入牌組</div>
+            </div>
+
+            <div class="collection-zone">
+                <h3>📦 牌庫 (<span id="de-coll-count">0</span>張)</h3>
+                <div id="de-coll-cards" class="de-grid"></div>
+                <div id="de-coll-empty" class="de-empty">還沒有可用的卡片</div>
+            </div>
+
+            <div class="de-actions">
+                <button id="de-save-btn" class="de-btn save">💾 儲存牌組</button>
+                <button id="de-reset-btn" class="de-btn reset">🔄 全部上陣</button>
+                <button id="de-close-btn" class="de-btn close">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>

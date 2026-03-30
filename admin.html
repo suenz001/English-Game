@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>英文勇者塔 - 家長管理</title>
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 密碼鎖畫面 -->
+    <div id="password-screen">
+        <div class="lock-container">
+            <div class="lock-icon">🔒</div>
+            <div class="lock-title">家長管理系統</div>
+            <div class="lock-subtitle">請輸入密碼以繼續</div>
+            <input type="password" id="password-input" maxlength="10" placeholder="預設密碼：1234">
+            <button id="unlock-btn">🔓 解鎖</button>
+            <div id="password-error" class="password-error hidden">❌ 密碼錯誤！</div>
+            <a href="index.html" class="back-link">← 返回遊戲</a>
+        </div>
+    </div>
+
+    <!-- 管理主頁 -->
+    <div id="admin-dashboard" class="hidden">
+        <header class="admin-header">
+            <h1>⚙️ 家長管理系統</h1>
+            <div class="header-actions">
+                <a href="index.html" class="header-btn">🎮 返回遊戲</a>
+                <button id="change-pwd-btn" class="header-btn">🔑 改密碼</button>
+                <button id="logout-btn" class="header-btn">🚪 登出</button>
+            </div>
+        </header>
+
+        <!-- Tab 導航 -->
+        <nav class="admin-tabs">
+            <button class="admin-tab active" data-tab="pool">📦 卡牌池管理</button>
+            <button class="admin-tab" data-tab="custom">➕ 自訂單字</button>
+        </nav>
+
+        <main class="admin-main">
+            <!-- ===== Tab: 卡牌池管理 ===== -->
+            <div id="tab-pool" class="tab-content">
+                <div class="pool-header">
+                    <div class="stats-bar">
+                        <div class="stat-item"><span class="stat-label">啟用中</span><span id="active-count" class="stat-value">0</span></div>
+                        <div class="stat-item"><span class="stat-label">總卡牌</span><span id="total-count" class="stat-value">0</span></div>
+                    </div>
+                    <div class="pool-actions">
+                        <button id="select-all-btn" class="action-btn green">✅ 全部啟用</button>
+                        <button id="deselect-all-btn" class="action-btn red">❌ 全部停用</button>
+                    </div>
+                    <div class="pool-filters">
+                        <button class="pool-filter active" data-diff="all">全部</button>
+                        <button class="pool-filter" data-diff="1">⭐ 基礎</button>
+                        <button class="pool-filter" data-diff="2">⭐⭐ 進階</button>
+                        <button class="pool-filter" data-diff="3">⭐⭐⭐ 挑戰</button>
+                    </div>
+                </div>
+                <div id="card-pool-list" class="card-pool-list"></div>
+            </div>
+
+            <!-- ===== Tab: 自訂單字 ===== -->
+            <div id="tab-custom" class="tab-content hidden">
+                <div class="form-section">
+                    <h2 id="form-title">➕ 新增單字卡</h2>
+                    <form id="word-form">
+                        <input type="hidden" id="edit-id" value="">
+                        <div class="form-row">
+                            <div class="form-group"><label>英文單字 *</label><input type="text" id="word-en" required placeholder="例如: elephant"></div>
+                            <div class="form-group"><label>中文意思 *</label><input type="text" id="word-zh" required placeholder="例如: 大象"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>難度</label>
+                                <select id="word-difficulty"><option value="1">⭐ 基礎</option><option value="2" selected>⭐⭐ 進階</option><option value="3">⭐⭐⭐ 挑戰</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label>卡牌類型</label>
+                                <select id="word-type"><option value="attack">⚔️ 攻擊</option><option value="defend">🛡️ 防禦</option><option value="skill">✨ 技能</option><option value="power">💜 能力</option></select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>能量 ⚡</label><select id="word-cost"><option value="0">0</option><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option></select></div>
+                            <div class="form-group"><label>效果數值</label><input type="number" id="word-value" value="6" min="1" max="30"></div>
+                            <div class="form-group"><label>Emoji</label><input type="text" id="word-emoji" value="⭐" placeholder="🐘"></div>
+                        </div>
+                        <div id="extra-section" class="form-row">
+                            <div class="form-group"><label id="extra-label">附加效果</label><select id="word-extra"><option value="">無</option></select></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group full-width"><label>干擾詞（逗號分隔，留空自動產生）</label><input type="text" id="word-similar" placeholder="留空自動產生"></div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="submit-btn" id="submit-btn">✅ 新增卡牌</button>
+                            <button type="button" class="cancel-btn hidden" id="cancel-edit-btn">取消</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="list-section">
+                    <h2>📋 已新增的自訂單字</h2>
+                    <div id="custom-words-list"></div>
+                    <div id="empty-state" class="empty-state">還沒有自訂單字</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 隱藏的圖片壓縮 canvas -->
+    <canvas id="img-canvas" style="display:none"></canvas>
+
+    <script type="module" src="js/admin.js"></script>
+</body>
+</html>
