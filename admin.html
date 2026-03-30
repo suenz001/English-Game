@@ -52,9 +52,10 @@
                     </div>
                     <div class="pool-filters">
                         <button class="pool-filter active" data-diff="all">全部</button>
-                        <button class="pool-filter" data-diff="1">⭐ 基礎</button>
-                        <button class="pool-filter" data-diff="2">⭐⭐ 進階</button>
-                        <button class="pool-filter" data-diff="3">⭐⭐⭐ 挑戰</button>
+                        <button class="pool-filter" data-diff="common" style="color:#e0e0e0">⬜ 普通</button>
+                        <button class="pool-filter" data-diff="rare" style="color:#4dabf7">🔵 稀有</button>
+                        <button class="pool-filter" data-diff="epic" style="color:#be4bdb">🟣 史詩</button>
+                        <button class="pool-filter" data-diff="legendary" style="color:#fd7e14">🟠 傳說</button>
                     </div>
                 </div>
                 <div id="card-pool-list" class="card-pool-list"></div>
@@ -72,8 +73,8 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>難度</label>
-                                <select id="word-difficulty"><option value="1">⭐ 基礎</option><option value="2" selected>⭐⭐ 進階</option><option value="3">⭐⭐⭐ 挑戰</option></select>
+                                <label>稀有度</label>
+                                <select id="word-rarity"><option value="common">⬜ 普通</option><option value="rare" selected>🔵 稀有</option><option value="epic">🟣 史詩</option><option value="legendary">🟠 傳說</option></select>
                             </div>
                             <div class="form-group">
                                 <label>卡牌類型</label>

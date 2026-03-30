@@ -1,5 +1,5 @@
 // ===== 家長管理系統 =====
-import { WORD_CARDS, STARTER_DECK } from './data.js';
+import { WORD_CARDS, STARTER_DECK, RARITY_CONFIG } from './data.js';
 import { getCardArt } from './cardart.js';
 import { generateConfusingWords } from './phonetics.js';
 
@@ -42,7 +42,7 @@ function buildCardData(f) {
     else if (f.type==='skill') { if(f.extra==='heal') extra.heal=true; if(f.extra==='draw') extra.draw=true; if(f.extra==='energy') extra.energy=true; }
     else if (f.type==='power') { if(f.extra==='permAtk') extra.permAtk=true; if(f.extra==='regen') extra.regen=true; if(f.extra==='thorns') extra.thorns=true; }
     const tpl = { attack:'攻擊，造成 {v} 點傷害', defend:'防禦，獲得 {v} 點護甲', skill:'效果 {v}', power:'能力 {v}' };
-    return { id: f.en.toLowerCase().trim(), en: f.en.toLowerCase().trim(), zh: f.zh.trim(), difficulty: parseInt(f.difficulty),
+    return { id: f.en.toLowerCase().trim(), en: f.en.toLowerCase().trim(), zh: f.zh.trim(), difficulty: 1, rarity: f.rarity || 'common',
         type: f.type, cost: parseInt(f.cost), value: parseInt(f.value), emoji: f.emoji || '⭐',
         desc: `${f.emoji||'⭐'} ${tpl[f.type]}`, extra: Object.keys(extra).length ? extra : undefined };
 }
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const editId = document.getElementById('edit-id').value;
         const card = buildCardData({
             en: document.getElementById('word-en').value, zh: document.getElementById('word-zh').value,
-            difficulty: document.getElementById('word-difficulty').value, type: typeSelect.value,
+            rarity: document.getElementById('word-rarity').value, type: typeSelect.value,
             cost: document.getElementById('word-cost').value, value: document.getElementById('word-value').value,
             emoji: document.getElementById('word-emoji').value, extra: extraSelect.value,
         });
@@ -171,7 +171,7 @@ function renderCardPool() {
     const all = getAllWords();
     const active = getActiveIds();
     const images = getCardImages();
-    const filtered = currentPoolFilter === 'all' ? all : all.filter(c => c.difficulty === parseInt(currentPoolFilter));
+    const filtered = currentPoolFilter === 'all' ? all : all.filter(c => (c.rarity || 'common') === currentPoolFilter);
     const typeLabel = { attack:'⚔️', defend:'🛡️', skill:'✨', power:'💜' };
     const container = document.getElementById('card-pool-list');
 
@@ -183,13 +183,16 @@ function renderCardPool() {
         const isActive = active ? active.has(card.id) : true;
         const hasImage = !!images[card.id];
         const artHtml = getCardArt(card.id);
+        const rarity = card.rarity || 'common';
+        const rarityConf = RARITY_CONFIG[rarity] || RARITY_CONFIG.common;
+        const rarityLabel = rarityConf.label;
         return `
-            <div class="pool-card ${isActive ? '' : 'inactive'}">
+            <div class="pool-card ${isActive ? '' : 'inactive'}" style="border-left: 3px solid ${rarityConf.color}">
                 <div class="pool-toggle"><input type="checkbox" ${isActive ? 'checked' : ''} data-id="${card.id}"></div>
                 <div class="pool-preview">${artHtml}</div>
                 <div class="pool-info">
                     <span class="pool-en">${card.en}</span><span class="pool-zh">${card.zh}</span>
-                    <div class="pool-meta">${typeLabel[card.type]||''} ${card.desc.replace('{v}',card.value)} | ⚡${card.cost}</div>
+                    <div class="pool-meta">${typeLabel[card.type]||''} ${card.desc.replace('{v}',card.value)} | ⚡${card.cost} | <span style="color:${rarityConf.color}">${rarityLabel}</span></div>
                 </div>
                 <div class="pool-img-actions">
                     ${hasImage ? '<span class="img-indicator">📷</span>' : ''}
