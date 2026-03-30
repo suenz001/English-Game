@@ -102,3 +102,23 @@ body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135d
     .form-row { flex-direction: column; }
     .form-group { min-width: 100%; }
 }
+
+/* ===== Emoji 選擇器 ===== */
+.emoji-picker {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+    max-height: 240px; overflow-y: auto;
+    background: rgba(26,10,46,0.97); border: 1px solid rgba(155,89,182,0.4);
+    border-radius: 12px; padding: 10px; margin-top: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+}
+.emoji-cat-label {
+    font-size: 0.7em; color: #a78bba; font-weight: 700;
+    padding: 4px 0 2px; border-bottom: 1px solid rgba(155,89,182,0.15); margin-bottom: 4px;
+}
+.emoji-grid { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 6px; }
+.emoji-option {
+    width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.3em; border-radius: 8px; cursor: pointer; transition: all 0.15s;
+}
+.emoji-option:hover { background: rgba(155,89,182,0.3); transform: scale(1.2); }
+.form-group { position: relative; }

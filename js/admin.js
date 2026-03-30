@@ -154,9 +154,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-id').value = ''; document.getElementById('form-title').textContent = '➕ 新增單字卡';
         document.getElementById('submit-btn').textContent = '✅ 新增卡牌';
         document.getElementById('cancel-edit-btn').classList.add('hidden');
+        if (document.getElementById('emoji-picker')) document.getElementById('emoji-picker').classList.add('hidden');
         updateExtra(); renderWordList(); renderCardPool();
         alert(`✅「${card.en}」已新增！`);
     });
+
+    // Emoji 選擇器
+    setupEmojiPicker();
 
     document.getElementById('cancel-edit-btn').addEventListener('click', () => {
         document.getElementById('word-form').reset(); document.getElementById('edit-id').value = '';
@@ -246,26 +250,31 @@ function renderWordList() {
     if (words.length === 0) { container.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
     emptyState.classList.add('hidden');
 
-    container.innerHTML = words.map(w => `
-        <div class="word-item">
+    // 最新的放最上面
+    const reversed = [...words].reverse();
+    container.innerHTML = reversed.map(w => {
+        const rarity = w.rarity || 'common';
+        const rc = RARITY_CONFIG[rarity] || RARITY_CONFIG.common;
+        return `
+        <div class="word-item" style="border-left:3px solid ${rc.color}">
             <span class="word-emoji">${w.emoji}</span>
             <div class="word-info">
                 <span class="word-en">${w.en}</span> <span class="word-zh">${w.zh}</span>
-                <div class="word-meta">${typeLabel[w.type]||w.type} | ⚡${w.cost} | 數值${w.value}</div>
+                <div class="word-meta">${typeLabel[w.type]||w.type} | ⚡${w.cost} | 數值${w.value} | <span style="color:${rc.color}">${rc.label}</span></div>
             </div>
             <div class="word-actions">
                 <button onclick="editWord('${w.id}')">✏️</button>
                 <button class="delete-btn" onclick="deleteWord('${w.id}')">🗑️</button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 window.editWord = function(id) {
     const w = getCustomWords().find(x => x.id === id); if (!w) return;
     document.getElementById('edit-id').value = id;
     document.getElementById('word-en').value = w.en; document.getElementById('word-zh').value = w.zh;
-    document.getElementById('word-difficulty').value = w.difficulty; document.getElementById('word-type').value = w.type;
+    document.getElementById('word-rarity').value = w.rarity || 'common'; document.getElementById('word-type').value = w.type;
     document.getElementById('word-type').dispatchEvent(new Event('change'));
     document.getElementById('word-cost').value = w.cost; document.getElementById('word-value').value = w.value;
     document.getElementById('word-emoji').value = w.emoji;
@@ -288,3 +297,52 @@ window.deleteWord = function(id) {
     const imgs = getCardImages(); delete imgs[id]; saveCardImages(imgs);
     renderWordList(); renderCardPool();
 };
+
+// ===== Emoji 選擇器 =====
+function setupEmojiPicker() {
+    const EMOJIS = {
+        '動物': ['🐱','🐶','🐦','🐟','🦁','🐻','🐝','🐍','🐯','🦈','🦅','🐴','🐺','🐉','🕷️','🐸','🐧','🦊','🐰','🐮','🐷','🐵','🦋','🐢','🐘','🦒','🦓','🐬','🦀','🐙','🦜','🦉','🐿️','🦇'],
+        '食物': ['🍎','🍌','🍇','🍕','🍔','🍰','🎂','🍬','🍩','🍪','🥛','🧁','🍓','🥚','🍒','🌽','🥕','🍜','🍣','🍦','🧀','🥝','🍉','🍋','🥑','🍑','🍫','☕'],
+        '自然': ['☀️','🌙','⭐','🌧️','🔥','🧊','🌳','🌊','⛰️','🌋','🌈','🌸','🌹','🌺','💧','☁️','🌪️','❄️','🍀','🌻','🍄','🌴','🏝️','💎','🪨','🌲'],
+        '武器': ['⚔️','🗡️','🏹','🔪','🔨','🛡️','💥','💣','🪓','🔱','⛑️','🦺','☂️'],
+        '魔法': ['✨','🔮','💡','🕯️','👑','🏆','💰','📖','🧪','👼','🔥','⚡','💫','🌟','🎭','🎪','🪄'],
+        '表情': ['😊','😡','💪','👊','🦶','👁️','🏃','😎','🤩','😱','🥳','😈','👻','💀','👹','🤖','👽','🧙'],
+        '物品': ['🎩','🥤','📦','🛏️','🎒','🚪','🎮','🎵','💭','🎯','🗝️','📷','💌','🎁','🏠','🏰','🌉','🚀','🎸','📱','⏰','🔔','🧲','🪞'],
+    };
+
+    const emojiInput = document.getElementById('word-emoji');
+    // 建立選擇器 DOM
+    const picker = document.createElement('div');
+    picker.id = 'emoji-picker';
+    picker.className = 'emoji-picker hidden';
+    let html = '';
+    for (const [cat, emojis] of Object.entries(EMOJIS)) {
+        html += `<div class="emoji-cat-label">${cat}</div><div class="emoji-grid">`;
+        html += emojis.map(e => `<span class="emoji-option" data-emoji="${e}">${e}</span>`).join('');
+        html += '</div>';
+    }
+    picker.innerHTML = html;
+    emojiInput.parentElement.appendChild(picker);
+
+    // 點擊 input 顯示/隱藏
+    emojiInput.addEventListener('click', (e) => {
+        e.preventDefault();
+        picker.classList.toggle('hidden');
+    });
+
+    // 選擇 emoji
+    picker.addEventListener('click', (e) => {
+        const opt = e.target.closest('.emoji-option');
+        if (opt) {
+            emojiInput.value = opt.dataset.emoji;
+            picker.classList.add('hidden');
+        }
+    });
+
+    // 點外面關閉
+    document.addEventListener('click', (e) => {
+        if (!emojiInput.contains(e.target) && !picker.contains(e.target)) {
+            picker.classList.add('hidden');
+        }
+    });
+}
