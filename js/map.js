@@ -1,6 +1,7 @@
 import { FLOOR_CONFIG, GAME_CONSTANTS, STARTER_DECK, ENEMIES, WORD_CARDS, getAllWordCards, getActiveWordCards, getPlayerCollection, savePlayerCollection, getPlayerDeckConfig, savePlayerDeckConfig } from './data.js';
 import { initBattle, showCardReward } from './battle.js';
 import { getCardArt } from './cardart.js';
+import { cloudGet, cloudSet } from './cloud-save.js';
 
 let gameState = null;
 let onGameOver = null;
@@ -118,8 +119,38 @@ export function startNewRun(callback) {
         playerDeck: startingDeck,
         playerBuffs: { strength: 0, regen: 0, thorns: 0 },
         newCardIds: [],
+        inBattle: false,
     };
+    saveRunState();
     showMap();
+}
+
+export function saveRunState() {
+    if (!gameState || !mapData) return;
+    const saveObj = {
+        gameState: { ...gameState, visitedNodes: Array.from(gameState.visitedNodes) },
+        mapData: mapData
+    };
+    cloudSet('vocabSpire_savedRun', 'savedRun', saveObj);
+}
+
+export function loadSavedRun(battleEndCallback) {
+    onGameOver = battleEndCallback;
+    const save = cloudGet('vocabSpire_savedRun', 'savedRun');
+    if (!save) return;
+    
+    gameState = save.gameState;
+    gameState.visitedNodes = new Set(gameState.visitedNodes);
+    mapData = save.mapData;
+    
+    document.getElementById('title-screen').classList.add('hidden');
+    
+    if (gameState.inBattle) {
+        // 如果在戰鬥中退出，強制重新進入該場戰鬥（重置敵人與回合，但血量維持戰前狀態）
+        enterBattle(gameState.currentFloor + 1);
+    } else {
+        showMap();
+    }
 }
 
 // ===== 產生隨機起手牌組 (家長未設定時) =====
@@ -255,6 +286,7 @@ function selectNode(node, floor) {
     gameState.currentFloor = floor;
     gameState.currentNodeId = node.id;
     gameState.visitedNodes.add(node.id);
+    saveRunState();
 
     switch (node.type) {
         case NODE_TYPES.BATTLE:
@@ -291,6 +323,7 @@ function showMysteryCardReward(floor) {
                 gameState.newCardIds.push(cardId);
                 const coll = getPlayerCollection(); coll.push(cardId); savePlayerCollection(coll);
                 const dc = getPlayerDeckConfig(); dc.push(cardId); savePlayerDeckConfig(dc);
+                saveRunState();
             }
             showMap();
         });
@@ -327,7 +360,7 @@ function showCardRemoveEvent() {
     bodyEl.querySelectorAll('.event-card').forEach(el => {
         el.addEventListener('click', () => {
             const idx = gameState.playerDeck.indexOf(el.dataset.id);
-            if (idx >= 0) gameState.playerDeck.splice(idx, 1);
+            if (idx >= 0) { gameState.playerDeck.splice(idx, 1); saveRunState(); }
             modal.classList.add('hidden');
             showMap();
         });
@@ -386,6 +419,7 @@ function showMerchantEvent(floor) {
             const coll = getPlayerCollection(); coll.push(el.dataset.id); savePlayerCollection(coll);
             el.remove();
             modal.querySelector('.event-desc').textContent = `💰 你的金幣：${gameState.playerGold}`;
+            saveRunState();
         });
     });
 
@@ -395,6 +429,7 @@ function showMerchantEvent(floor) {
         gameState.playerHp = Math.min(gameState.playerMaxHp, gameState.playerHp + 15);
         this.remove();
         modal.querySelector('.event-desc').textContent = `💰 你的金幣：${gameState.playerGold}`;
+        saveRunState();
     });
 
     bodyEl.querySelector('.remove-item')?.addEventListener('click', function() {
@@ -413,11 +448,11 @@ function showMerchantEvent(floor) {
 // --- 祝福事件 ---
 function showBlessingEvent() {
     const blessings = [
-        { text: '💪 力量祝福：永久攻擊力 +1', apply: () => { gameState.playerBuffs.strength += 1; } },
-        { text: '❤️ 生命祝福：最大HP +5 並回滿', apply: () => { gameState.playerMaxHp += 5; gameState.playerHp = gameState.playerMaxHp; } },
-        { text: '🌿 再生祝福：每回合回復 1 HP', apply: () => { gameState.playerBuffs.regen += 1; } },
-        { text: '🌹 荊棘祝福：受擊反彈 2 傷害', apply: () => { gameState.playerBuffs.thorns += 2; } },
-        { text: '💰 財富祝福：獲得 30 金幣', apply: () => { gameState.playerGold += 30; } },
+        { text: '💪 力量祝福：永久攻擊力 +1', apply: () => { gameState.playerBuffs.strength += 1; saveRunState(); } },
+        { text: '❤️ 生命祝福：最大HP +5 並回滿', apply: () => { gameState.playerMaxHp += 5; gameState.playerHp = gameState.playerMaxHp; saveRunState(); } },
+        { text: '🌿 再生祝福：每回合回復 1 HP', apply: () => { gameState.playerBuffs.regen += 1; saveRunState(); } },
+        { text: '🌹 荊棘祝福：受擊反彈 2 傷害', apply: () => { gameState.playerBuffs.thorns += 2; saveRunState(); } },
+        { text: '💰 財富祝福：獲得 30 金幣', apply: () => { gameState.playerGold += 30; saveRunState(); } },
     ];
     const blessing = blessings[Math.floor(Math.random() * blessings.length)];
 
@@ -460,6 +495,7 @@ function showRestScreen(floor) {
 
     newRest.addEventListener('click', () => {
         s.playerHp = Math.min(s.playerMaxHp, s.playerHp + healAmount);
+        saveRunState();
         modal.classList.add('hidden');
         showMap();
     });
@@ -471,6 +507,8 @@ function showRestScreen(floor) {
 
 // ===== 戰鬥 =====
 function enterBattle(floor) {
+    gameState.inBattle = true;
+    saveRunState();
     document.getElementById('map-screen').classList.add('hidden');
     document.getElementById('battle-screen').classList.remove('hidden');
 
@@ -487,6 +525,9 @@ function handleBattleResult(result, floor) {
         gameState.playerGold += result.goldEarned;
         gameState.playerDeck = result.deck;
         gameState.playerBuffs = result.buffs;
+        
+        gameState.inBattle = false;
+        saveRunState();
 
         if (floor >= gameState.maxFloor) { showGameComplete(); return; }
 

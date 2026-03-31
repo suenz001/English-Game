@@ -1,5 +1,6 @@
-import { startNewRun, showMap } from './js/map.js';
+import { startNewRun, showMap, loadSavedRun } from './js/map.js';
 import { initAuthUI } from './js/auth.js';
+import { onUserChange, cloudGet, cloudSet } from './js/cloud-save.js';
 
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, background: '#2d1b4e', color: '#fff' });
 
@@ -9,9 +10,20 @@ initAuthUI();
 const titleScreen = document.getElementById('title-screen');
 const mapScreen = document.getElementById('map-screen');
 const battleScreen = document.getElementById('battle-screen');
+const continueBtn = document.getElementById('continue-btn');
+
+function updateContinueButton() {
+    const savedData = cloudGet('vocabSpire_savedRun', 'savedRun');
+    if (savedData) continueBtn.classList.remove('hidden');
+    else continueBtn.classList.add('hidden');
+}
+
+onUserChange(updateContinueButton);
 
 // ===== 開始遊戲 =====
 document.getElementById('start-btn').addEventListener('click', () => {
+    cloudSet('vocabSpire_savedRun', 'savedRun', null); // 新的一局先清除存檔
+    updateContinueButton();
     titleScreen.classList.add('hidden');
     startNewRun((result) => {
         battleScreen.classList.add('hidden');
@@ -19,7 +31,28 @@ document.getElementById('start-btn').addEventListener('click', () => {
         titleScreen.classList.remove('hidden');
         if (result.victory) Toast.fire({ icon: 'success', title: '🏆 恭喜通關！' });
         else Toast.fire({ icon: 'info', title: `到達第 ${result.floor} 層，再試一次吧！` });
+        updateContinueButton();
     });
+});
+
+document.getElementById('continue-btn').addEventListener('click', () => {
+    titleScreen.classList.add('hidden');
+    loadSavedRun((result) => {
+        battleScreen.classList.add('hidden');
+        mapScreen.classList.add('hidden');
+        titleScreen.classList.remove('hidden');
+        if (result.victory) Toast.fire({ icon: 'success', title: '🏆 恭喜通關！' });
+        else Toast.fire({ icon: 'info', title: `到達第 ${result.floor} 層，再試一次吧！` });
+        updateContinueButton();
+    });
+});
+
+// ===== 地圖返回主畫面 =====
+document.getElementById('map-home-btn').addEventListener('click', () => {
+    mapScreen.classList.add('hidden');
+    titleScreen.classList.remove('hidden');
+    Toast.fire({ icon: 'info', title: '進度已自動儲存' });
+    updateContinueButton();
 });
 
 // ===== 結束回合 =====
@@ -30,15 +63,15 @@ document.getElementById('end-turn-btn').addEventListener('click', () => {
 // ===== 離開戰鬥 =====
 document.getElementById('quit-battle-btn').addEventListener('click', () => {
     Swal.fire({
-        title: '確定要離開嗎？',
-        text: '本次冒險進度將會失去！',
-        icon: 'warning',
+        title: '確定要返回主畫面嗎？',
+        text: '戰鬥進度將被保留，下次載入時會從「本場戰鬥一開始」重新開始！',
+        icon: 'info',
         showCancelButton: true,
-        confirmButtonText: '確定離開',
+        confirmButtonText: '確定返回',
         cancelButtonText: '繼續戰鬥',
         background: '#2d1b4e',
         color: '#fff',
-        confirmButtonColor: '#e74c3c',
+        confirmButtonColor: '#3498db',
         cancelButtonColor: '#9b59b6',
     }).then(r => {
         if (r.isConfirmed) {
@@ -47,7 +80,8 @@ document.getElementById('quit-battle-btn').addEventListener('click', () => {
             battleScreen.classList.add('hidden');
             mapScreen.classList.add('hidden');
             titleScreen.classList.remove('hidden');
-            Toast.fire({ icon: 'info', title: '已離開冒險' });
+            Toast.fire({ icon: 'info', title: '已儲存進度並保留至主畫面' });
+            updateContinueButton();
         }
     });
 });
@@ -238,11 +272,34 @@ document.getElementById('album-btn').addEventListener('click', () => {
                 const rarityKey = d.getCardRarity(card);
                 const rarity = d.RARITY_CONFIG[rarityKey];
                 const art = a.getCardArt(card.id);
-                return `<div class="deck-card rarity-${rarityKey}" style="border-color:${rarity.color}" onclick="window.showCardDetail('${card.id}')">
-                            <div class="card-art" style="width:40px;height:28px">${art}</div>
-                            <span class="card-name">${card.en} (${card.zh}) x${count}</span>
-                        </div>`;
+                // 使用 de-card 樣式
+                return `
+                    <div class="de-card rarity-${rarityKey}">
+                        <div class="de-card-top" style="background:${rarity.color}">
+                            <div class="de-card-cost">${card.cost !== undefined ? card.cost : '*'}</div>
+                            <div class="de-card-name">${card.en}</div>
+                            <button class="card-info-btn" data-id="${card.id}">🔍</button>
+                        </div>
+                        <div class="de-card-art">${art}</div>
+                        <div class="de-card-desc">
+                            <span class="de-card-zh">${card.zh}</span><br>
+                            ${card.desc.replace('{v}', card.value || 0)}
+                        </div>
+                        <div class="de-card-action" style="font-weight:bold; color:#a78bba; text-align:center;">
+                            收集進度: x${count}
+                        </div>
+                    </div>`;
             }).join('');
+            
+            // 綁定卡冊內的 🔍 按鈕事件
+            setTimeout(() => {
+                container.querySelectorAll('.card-info-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        window.showCardDetail(btn.dataset.id);
+                    });
+                });
+            }, 0);
         }
         
         modal.classList.remove('hidden');

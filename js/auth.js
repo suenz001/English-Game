@@ -21,10 +21,10 @@ export function initAuthUI() {
         } else {
             loginBtn.classList.remove('hidden');
             userInfo.classList.add('hidden');
-            // 未登入情況下重整網頁，清空卡冊等進度，達成「從頭開始」的設計
             if (isFirstCheck) {
                 localStorage.removeItem('vocabSpire_playerCollection');
                 localStorage.removeItem('vocabSpire_playerDeckConfig');
+                localStorage.removeItem('vocabSpire_savedRun');
                 console.log('Guest session detected: Collection wiped.');
             }
         }
