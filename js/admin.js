@@ -15,7 +15,7 @@ function getCustomWords() { try { return JSON.parse(localStorage.getItem(WORDS_K
 function saveCustomWords(w) { localStorage.setItem(WORDS_KEY, JSON.stringify(w)); }
 function getCustomSimilar() { try { return JSON.parse(localStorage.getItem(SIMILAR_KEY) || '{}'); } catch { return {}; } }
 function saveCustomSimilar(s) { localStorage.setItem(SIMILAR_KEY, JSON.stringify(s)); }
-function getAllWords() { return [...WORD_CARDS, ...getCustomWords()]; }
+function getAllWords() { return [...getCustomWords().reverse(), ...WORD_CARDS]; }
 function getActiveIds() { try { const r = JSON.parse(localStorage.getItem(ACTIVE_KEY)); return r ? new Set(r) : null; } catch { return null; } }
 function saveActiveIds(s) { localStorage.setItem(ACTIVE_KEY, JSON.stringify([...s])); }
 function getCardImages() { try { return JSON.parse(localStorage.getItem(IMAGES_KEY) || '{}'); } catch { return {}; } }
