@@ -278,6 +278,7 @@ body {
     max-width: 600px;
     margin: 0 auto;
     animation: fadeIn 0.3s ease;
+    background: radial-gradient(ellipse at top, rgba(45,27,78,0.6) 0%, transparent 60%);
 }
 
 .battle-top-bar {
@@ -285,10 +286,12 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    background: rgba(0,0,0,0.3);
+    background: rgba(0,0,0,0.4);
     border-radius: 10px;
     margin-bottom: 10px;
     font-size: 0.9em;
+    border: 1px solid rgba(155,89,182,0.15);
+    backdrop-filter: blur(4px);
 }
 
 .quit-btn {
@@ -310,8 +313,11 @@ body {
 /* --- 敵人區域（多敵人）--- */
 .enemy-area {
     text-align: center;
-    padding: 8px;
+    padding: 10px 8px;
     flex: 0 0 auto;
+    background: rgba(0,0,0,0.15);
+    border-radius: 14px;
+    border: 1px solid rgba(231,76,60,0.08);
 }
 
 .enemies-row {
@@ -325,53 +331,84 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.04);
+    padding: 10px 8px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(60,30,90,0.4) 0%, rgba(30,15,50,0.6) 100%);
     border: 2px solid rgba(255,255,255,0.1);
-    min-width: 80px;
-    max-width: 140px;
+    min-width: 85px;
+    max-width: 145px;
     flex: 1;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.enemy-unit:hover {
+    border-color: rgba(231,76,60,0.4);
+    transform: translateY(-2px);
 }
 .enemy-unit.targeted {
     border-color: #e74c3c;
-    background: rgba(231,76,60,0.15);
-    box-shadow: 0 0 12px rgba(231,76,60,0.3);
+    background: linear-gradient(180deg, rgba(231,76,60,0.2) 0%, rgba(30,15,50,0.6) 100%);
+    box-shadow: 0 0 16px rgba(231,76,60,0.3), inset 0 0 20px rgba(231,76,60,0.05);
 }
 .enemy-unit.defeated {
-    opacity: 0.3;
+    opacity: 0.25;
     pointer-events: none;
+    filter: grayscale(0.8);
 }
 .enemy-unit.drop-target {
     border-color: #f1c40f;
     background: rgba(241,196,15,0.15);
-    box-shadow: 0 0 15px rgba(241,196,15,0.3);
+    box-shadow: 0 0 18px rgba(241,196,15,0.35);
     animation: pulse 0.8s infinite;
 }
 
-.enemy-sprite-mini { font-size: 2.5em; margin: 2px 0; transition: transform 0.2s; }
-.enemy-name-mini { font-size: 0.75em; font-weight: 700; color: #e0d0f0; }
-.enemy-intent-mini { font-size: 0.7em; padding: 2px 6px; background: rgba(0,0,0,0.4); border-radius: 6px; margin-bottom: 2px; }
+.enemy-sprite-mini {
+    font-size: 2.8em;
+    margin: 4px 0;
+    transition: transform 0.2s;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+}
+.enemy-name-mini { font-size: 0.75em; font-weight: 700; color: #e0d0f0; margin-bottom: 2px; }
+.enemy-intent-mini {
+    font-size: 0.7em;
+    padding: 3px 8px;
+    background: rgba(231,76,60,0.2);
+    border: 1px solid rgba(231,76,60,0.15);
+    border-radius: 8px;
+    margin-bottom: 4px;
+}
 
 .enemy-hp-bar-mini {
     width: 100%;
-    height: 10px;
-    background: rgba(0,0,0,0.4);
-    border-radius: 5px;
-    margin: 3px 0;
-    overflow: hidden;
+    height: 14px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 7px;
+    margin: 4px 0;
+    overflow: visible;
     position: relative;
+    border: 1px solid rgba(255,255,255,0.08);
 }
 .enemy-hp-fill-mini {
     height: 100%;
-    background: linear-gradient(90deg, #e74c3c, #c0392b);
-    border-radius: 5px;
+    background: linear-gradient(90deg, #e74c3c, #ff6b6b);
+    border-radius: 7px;
     transition: width 0.3s ease;
+    box-shadow: 0 0 6px rgba(231,76,60,0.4);
 }
-.enemy-hp-text-mini { position: absolute; top: -1px; left: 50%; transform: translateX(-50%); font-size: 0.55em; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
-.enemy-block-mini { font-size: 0.7em; color: #4dabf7; }
+.enemy-hp-text-mini {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.6em;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    line-height: 1;
+    white-space: nowrap;
+}
+.enemy-block-mini { font-size: 0.7em; color: #4dabf7; margin-top: 2px; }
 .enemy-buffs-mini { font-size: 0.6em; min-height: 0.8em; }
 
 /* --- 拖曳系統 --- */
@@ -416,8 +453,11 @@ body {
 /* --- 玩家區域 --- */
 .player-area {
     text-align: center;
-    padding: 10px;
+    padding: 12px;
     flex: 0 0 auto;
+    background: rgba(0,0,0,0.15);
+    border-radius: 14px;
+    border: 1px solid rgba(46,204,113,0.1);
 }
 
 .player-area.shake {
@@ -426,6 +466,7 @@ body {
 
 .player-sprite {
     font-size: 3em;
+    filter: drop-shadow(0 2px 8px rgba(46,204,113,0.3));
 }
 
 .player-sprite.hit {
@@ -437,18 +478,20 @@ body {
     width: 80%;
     max-width: 300px;
     height: 22px;
-    background: rgba(0,0,0,0.4);
-    border-radius: 10px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 11px;
     margin: 5px auto;
     overflow: hidden;
     position: relative;
+    border: 1px solid rgba(46,204,113,0.15);
 }
 
 .player-hp-fill {
     height: 100%;
-    background: linear-gradient(90deg, #2ecc71, #27ae60);
-    border-radius: 10px;
+    background: linear-gradient(90deg, #2ecc71, #58d68d);
+    border-radius: 11px;
     transition: width 0.3s ease;
+    box-shadow: 0 0 8px rgba(46,204,113,0.4);
 }
 
 .player-hp-text {
@@ -458,7 +501,7 @@ body {
     transform: translate(-50%, -50%);
     font-size: 0.8em;
     font-weight: 700;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
 }
 
 .player-stats {
