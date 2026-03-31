@@ -1040,3 +1040,40 @@ function animateProjectile(startEl, endEl, emojiName) {
 export function getBattleState() {
     return battleState;
 }
+
+// ===== 戰鬥中查看牌庫/棄牌堆 =====
+export function showBattleDeckModal(type) {
+    if (!battleState || animating) return;
+    const s = battleState;
+    const modal = document.getElementById('deck-modal');
+    const container = modal.querySelector('.deck-cards');
+    const title = modal.querySelector('.deck-title');
+    
+    let sourceArr = [];
+    if (type === 'deck') {
+        title.innerHTML = `📚 牌庫剩餘卡牌 (${s.player.deck.length}張)`;
+        sourceArr = [...s.player.deck]; 
+    } else {
+        title.innerHTML = `🗑️ 棄牌堆 (${s.player.discard.length}張)`;
+        sourceArr = [...s.player.discard]; 
+    }
+    
+    // 反轉陣列讓最新/即將抽到的顯示在最上方
+    container.innerHTML = sourceArr.reverse().map(cardId => {
+        const card = getAllWordCards().find(c => c.id === cardId);
+        if (!card) return '';
+        const rarityKey = getCardRarity(card);
+        const rarity = RARITY_CONFIG[rarityKey];
+        const art = getCardArt(card.id);
+        return `<div class="deck-card rarity-${rarityKey}" style="border-color:${rarity.color}">
+                    <div class="card-art" style="width:40px;height:28px">${art}</div>
+                    <span class="card-name">${card.en} (${card.zh})</span>
+                </div>`;
+    }).join('');
+    
+    modal.classList.remove('hidden');
+}
+
+// 綁定點擊事件
+document.getElementById('deck-count').addEventListener('click', () => showBattleDeckModal('deck'));
+document.getElementById('discard-count').addEventListener('click', () => showBattleDeckModal('discard'));

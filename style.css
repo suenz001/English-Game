@@ -685,6 +685,16 @@ body {
     color: #a78bba;
 }
 
+.deck-discard span {
+    cursor: pointer;
+    transition: transform 0.2s, color 0.2s;
+}
+
+.deck-discard span:hover {
+    transform: scale(1.1);
+    color: #fff;
+}
+
 /* --- 戰鬥日誌 --- */
 #battle-log {
     max-height: 80px;

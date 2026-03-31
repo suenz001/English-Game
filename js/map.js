@@ -96,11 +96,10 @@ export function startNewRun(callback) {
     const activeIds = new Set(activeCards.map(c => c.id));
 
     if (deckConfig.length === 0) {
-        deckConfig = STARTER_DECK.filter(id => activeIds.has(id));
-        if (deckConfig.length < 5) deckConfig = STARTER_DECK;
+        deckConfig = generateRandomBalancedDeck(activeIds);
     } else {
         deckConfig = deckConfig.filter(id => activeIds.has(id));
-        if (deckConfig.length < 5) deckConfig = STARTER_DECK.filter(id => activeIds.has(id));
+        if (deckConfig.length < 5) deckConfig = generateRandomBalancedDeck(activeIds);
     }
 
     mapData = generateMap(FLOOR_CONFIG.length);
@@ -118,6 +117,37 @@ export function startNewRun(callback) {
         newCardIds: [],
     };
     showMap();
+}
+
+// ===== 產生隨機起手牌組 (家長未設定時) =====
+function generateRandomBalancedDeck(activeIds) {
+    const all = getAllWordCards().filter(c => activeIds.has(c.id));
+    const attacks = shuffleArray(all.filter(c => c.type === 'attack'));
+    const defends = shuffleArray(all.filter(c => c.type === 'defend'));
+    const specials = shuffleArray(all.filter(c => c.type === 'skill' || c.type === 'power'));
+    
+    // 如果單卡池不足，回退回硬生生的 STARTER_DECK
+    if (attacks.length < 2 || defends.length < 2) return STARTER_DECK.slice(0, 10);
+    
+    const deck = [];
+    
+    // 試著抽 4攻, 4防, 2特 (如果數量不夠就盡可能拿滿)
+    const attackCount = Math.min(attacks.length, 4);
+    const defendCount = Math.min(defends.length, 4);
+    const specialCount = Math.min(specials.length, 2);
+    
+    for(let i=0; i<attackCount; i++) deck.push(attacks[i].id);
+    for(let i=0; i<defendCount; i++) deck.push(defends[i].id);
+    for(let i=0; i<specialCount; i++) deck.push(specials[i].id);
+    
+    // 如果因為某些類型卡不足 10 張，補不重複的卡進去湊滿 10 張
+    const missing = 10 - deck.length;
+    if (missing > 0) {
+        const remaining = shuffleArray(all.filter(c => !deck.includes(c.id)));
+        for(let i=0; i<Math.min(missing, remaining.length); i++) deck.push(remaining[i].id);
+    }
+    
+    return deck;
 }
 
 // ===== 取得可點擊的下一層節點 =====
