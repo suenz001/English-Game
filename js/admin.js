@@ -30,7 +30,7 @@ let currentPoolFilter = 'all';
 
 // ===== EXTRA OPTIONS =====
 const EXTRA_OPTIONS = {
-    attack: [{ value: '', label: '無' },{ value: 'poison', label: '🧪 中毒' },{ value: 'burn', label: '🔥 灼燒' },{ value: 'hits2', label: '⚔️ 二連擊' },{ value: 'vulnerable', label: '⚠️ 易傷(受傷1.5倍)' },{ value: 'weak', label: '😵‍💫 虛弱(傷害0.5倍)' }],
+    attack: [{ value: '', label: '無' },{ value: 'poison', label: '🧪 中毒' },{ value: 'hits2', label: '⚔️ 二連擊' },{ value: 'vulnerable', label: '⚠️ 易傷(受傷1.5倍)' },{ value: 'weak', label: '😵‍💫 虛弱(傷害0.5倍)' }],
     defend: [{ value: '', label: '無' },{ value: 'draw1', label: '🃏 抽1牌' },{ value: 'vulnerable', label: '⚠️ 易傷(受傷1.5倍)' },{ value: 'weak', label: '😵‍💫 虛弱(傷害0.5倍)' }],
     skill: [{ value: 'heal', label: '💚 回血' },{ value: 'draw', label: '🃏 抽牌' },{ value: 'energy', label: '⚡ 能量' }],
     power: [{ value: 'permAtk', label: '💪 攻擊+' },{ value: 'regen', label: '🌿 回血' },{ value: 'thorns', label: '🌹 反傷' }],
@@ -43,7 +43,7 @@ function generateSimilarWords(word) {
 function buildCardData(f) {
     const extra = {};
     const turns = parseInt(f.debuffTurns || 2);
-    if (f.type==='attack') { if(f.extra==='poison') extra.poison=turns; if(f.extra==='burn') extra.burn=turns; if(f.extra==='hits2') extra.hits=2; if(f.extra==='vulnerable') extra.vulnerable=turns; if(f.extra==='weak') extra.weak=turns; }
+    if (f.type==='attack') { if(f.extra==='poison') extra.poison=turns; if(f.extra==='hits2') extra.hits=2; if(f.extra==='vulnerable') extra.vulnerable=turns; if(f.extra==='weak') extra.weak=turns; }
     else if (f.type==='defend') { if(f.extra==='draw1') extra.draw=1; if(f.extra==='vulnerable') extra.vulnerable=turns; if(f.extra==='weak') extra.weak=turns; }
     else if (f.type==='skill') { if(f.extra==='heal') extra.heal=true; if(f.extra==='draw') extra.draw=true; if(f.extra==='energy') extra.energy=true; }
     else if (f.type==='power') { if(f.extra==='permAtk') extra.permAtk=true; if(f.extra==='regen') extra.regen=true; if(f.extra==='thorns') extra.thorns=true; }
@@ -53,8 +53,7 @@ function buildCardData(f) {
     
     // 加上額外效果的說明文字（含回合數）
     if (f.extra) {
-        if (f.extra === 'poison') baseDesc += `，並給予 ${turns} 毒`;
-        if (f.extra === 'burn') baseDesc += `，並燒毀 ${turns} 回合`;
+        if (f.extra === 'poison') baseDesc += `，並給予 ${turns} 層毒`;
         if (f.extra === 'hits2') baseDesc += ` (攻擊兩次)`;
         if (f.extra === 'vulnerable') baseDesc += `，並給予 ${turns} 回合易傷`;
         if (f.extra === 'weak') baseDesc += `，並給予 ${turns} 回合虛弱`;
@@ -163,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateDebuffTurns() {
         const t = extraSelect.value;
         const group = document.getElementById('debuff-duration-group');
-        if (['poison', 'burn', 'weak', 'vulnerable'].includes(t)) {
+        if (['poison', 'weak', 'vulnerable'].includes(t)) {
             group.style.display = 'block';
         } else {
             group.style.display = 'none';
@@ -371,7 +370,6 @@ window.editWord = function(id) {
     // 判斷原來的 extra
     if (w.extra) {
         if (w.extra.poison) { document.getElementById('word-extra').value = 'poison'; document.getElementById('word-debuff-turns').value = w.extra.poison; }
-        else if (w.extra.burn) { document.getElementById('word-extra').value = 'burn'; document.getElementById('word-debuff-turns').value = w.extra.burn; }
         else if (w.extra.hits) document.getElementById('word-extra').value = 'hits2';
         else if (w.extra.vulnerable) { document.getElementById('word-extra').value = 'vulnerable'; document.getElementById('word-debuff-turns').value = w.extra.vulnerable; }
         else if (w.extra.weak) { document.getElementById('word-extra').value = 'weak'; document.getElementById('word-debuff-turns').value = w.extra.weak; }

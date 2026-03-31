@@ -20,7 +20,7 @@ function createEnemy(enemyKey, config) {
         attacks: tmpl.attacks.map(a => ({ ...a, damage: Math.floor(a.damage * config.enemyAtkMult) })),
         isBoss: tmpl.isBoss || false,
         intent: null,
-        buffs: { strength: 0, poison: 0, burn: 0, vulnerable: 0, weak: 0 },
+        buffs: { strength: 0, poison: 0, vulnerable: 0, weak: 0 },
     };
 }
 
@@ -45,7 +45,7 @@ export function initBattle(floor, playerDeck, playerHp, playerMaxHp, playerGold,
             energy: GAME_CONSTANTS.ENERGY_PER_TURN, maxEnergy: GAME_CONSTANTS.ENERGY_PER_TURN,
             gold: playerGold,
             deck: shuffleArray([...playerDeck]), hand: [], discard: [],
-            buffs: { strength: 0, regen: 0, thorns: 0, tempStrength: 0, doubleAtk: false, vulnerable: 0, weak: 0, ...playerBuffs },
+            buffs: { strength: 0, regen: 0, thorns: 0, tempStrength: 0, doubleAtk: false, vulnerable: 0, weak: 0, poison: 0, ...playerBuffs },
         },
         enemies,
         turn: 0,
@@ -76,6 +76,12 @@ function startPlayerTurn() {
         s.player.hp = Math.min(s.player.maxHp, s.player.hp + s.player.buffs.regen);
         addLog(`🌿 再生恢復了 ${s.player.buffs.regen} HP`);
     }
+    // 玩家中毒 DoT
+    if (s.player.buffs.poison > 0) {
+        s.player.hp -= s.player.buffs.poison;
+        addLog(`🧪 毒素對你造成 ${s.player.buffs.poison} 點傷害`);
+        s.player.buffs.poison = Math.max(0, s.player.buffs.poison - 1);
+    }
     // 遍歷所有敵人 DoT
     for (let i = s.enemies.length - 1; i >= 0; i--) {
         const e = s.enemies[i];
@@ -84,11 +90,6 @@ function startPlayerTurn() {
             e.hp -= e.buffs.poison;
             addLog(`🧪 毒素對 ${e.emoji}${e.name} 造成 ${e.buffs.poison} 點傷害`);
             e.buffs.poison = Math.max(0, e.buffs.poison - 1);
-        }
-        if (e.buffs.burn > 0) {
-            e.hp -= 2;
-            addLog(`🔥 灼燒對 ${e.emoji}${e.name} 造成 2 點傷害`);
-            e.buffs.burn--;
         }
         if (e.hp <= 0) addLog(`💥 ${e.emoji}${e.name} 被擊敗了！`);
     }
@@ -362,7 +363,6 @@ async function executeCard(card, handIndex, correct) {
                 addLog(`  💥 對 ${target.emoji}${target.name} 造成 ${dmg} 點傷害`);
             }
             if (extra.poison) { target.buffs.poison += extra.poison; addLog(`  🧪 施加 ${extra.poison} 層毒`); }
-            if (extra.burn) { target.buffs.burn += extra.burn; addLog(`  🔥 灼燒 ${extra.burn} 回合`); }
             if (extra.vulnerable) { target.buffs.vulnerable += extra.vulnerable; addLog(`  ⚠️ 敵人易傷 ${extra.vulnerable} 回合`); }
             if (extra.weak) { target.buffs.weak += extra.weak; addLog(`  😵‍💫 敵人虛弱 ${extra.weak} 回合`); }
             playAttackFx();
@@ -478,17 +478,10 @@ async function enemyTurn() {
             await delay(500);
         }
 
-        // 灼燒動畫
-        if (attack.burn) {
-            glowElement(playerEl, 'player-debuff-flash');
-            showStatusFx(playerEl, '🔥', '灼燒！', '#e74c3c');
-            await delay(400);
-        }
-
         // 毒素動畫
         if (attack.poison) {
             glowElement(playerEl, 'player-debuff-flash');
-            showStatusFx(playerEl, '🧪', '中毒！', '#27ae60');
+            showStatusFx(playerEl, '🧪', `中毒+${attack.poison}層`, '#27ae60');
             await delay(400);
         }
 
@@ -551,9 +544,8 @@ function applyEnemyAttack(enemy, attack, damageReduction) {
         }
     }
     if (attack.heal) { enemy.hp = Math.min(enemy.maxHp, enemy.hp + attack.heal); addLog(`  💚 ${enemy.name} 回復 ${attack.heal} HP`); }
-    if (attack.poison) { s.player.hp -= attack.poison; }
+    if (attack.poison) { s.player.buffs.poison += attack.poison; addLog(`  🧪 你被施加 ${attack.poison} 層毒素`); }
     if (attack.buffSelf) { enemy.buffs.strength += attack.buffSelf; addLog(`  💪 ${enemy.name} 攻擊力增加！`); }
-    if (attack.burn) { s.player.hp -= 2; addLog(`  🔥 你被灼燒了！`); }
     if (attack.applyVuln) { s.player.buffs.vulnerable += attack.applyVuln; addLog(`  ⚠️ 你被施加易傷 ${attack.applyVuln} 回合`); }
     if (attack.applyWeak) { s.player.buffs.weak += attack.applyWeak; addLog(`  😵‍💫 你被施加虛弱 ${attack.applyWeak} 回合`); }
     if (enemy.buffs.vulnerable > 0) enemy.buffs.vulnerable--;
@@ -735,6 +727,7 @@ export function renderBattle() {
     if (s.player.buffs.thorns > 0) buffText += `🌹${s.player.buffs.thorns} `;
     if (s.player.buffs.vulnerable > 0) buffText += `⚠️易傷${s.player.buffs.vulnerable} `;
     if (s.player.buffs.weak > 0) buffText += `😵‍💫虛弱${s.player.buffs.weak} `;
+    if (s.player.buffs.poison > 0) buffText += `🧪中毒${s.player.buffs.poison} `;
     document.getElementById('player-buffs').textContent = buffText;
 
     // Enemies - 動態產生多敵人
@@ -747,7 +740,7 @@ export function renderBattle() {
 
         let eBuff = '';
         if (e.buffs.poison > 0) eBuff += `🧪${e.buffs.poison} `;
-        if (e.buffs.burn > 0) eBuff += `🔥${e.buffs.burn} `;
+
         if (e.buffs.strength > 0) eBuff += `💪${e.buffs.strength} `;
         if (e.buffs.vulnerable > 0) eBuff += `⚠️${e.buffs.vulnerable} `;
         if (e.buffs.weak > 0) eBuff += `😵‍💫${e.buffs.weak} `;
