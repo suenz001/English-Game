@@ -95,12 +95,15 @@ export function startNewRun(callback) {
     const activeCards = getActiveWordCards();
     const activeIds = new Set(activeCards.map(c => c.id));
 
-    if (deckConfig.length === 0) {
-        deckConfig = generateRandomBalancedDeck(activeIds);
-    } else {
-        deckConfig = deckConfig.filter(id => activeIds.has(id));
-        if (deckConfig.length < 5) deckConfig = generateRandomBalancedDeck(activeIds);
-    }
+    // 1. 基底 10 張隨機卡
+    const baseDeck = generateRandomBalancedDeck(activeIds);
+    
+    // 2. 玩家自備的攜帶卡 (最多 5 張，且必須有啟用的)
+    let equippedCards = deckConfig.filter(id => activeIds.has(id));
+    if (equippedCards.length > 5) equippedCards = equippedCards.slice(0, 5);
+    
+    // 3. 融合為第一戰的起始卡組
+    const startingDeck = [...baseDeck, ...equippedCards];
 
     mapData = generateMap(FLOOR_CONFIG.length);
 
@@ -112,7 +115,7 @@ export function startNewRun(callback) {
         playerHp: GAME_CONSTANTS.STARTING_HP,
         playerMaxHp: GAME_CONSTANTS.MAX_HP,
         playerGold: 30, // 起始金幣給商人用
-        playerDeck: [...deckConfig],
+        playerDeck: startingDeck,
         playerBuffs: { strength: 0, regen: 0, thorns: 0 },
         newCardIds: [],
     };
@@ -173,7 +176,8 @@ export function showMap() {
 
     document.getElementById('map-hp').textContent = `❤️ ${s.playerHp}/${s.playerMaxHp}`;
     document.getElementById('map-gold').textContent = `💰 ${s.playerGold}`;
-    document.getElementById('map-deck-count').textContent = `📚 ${s.playerDeck.length} 張牌`;
+    const newSize = gameState.playerDeck.length;
+    document.getElementById('map-deck-count').textContent = `📚 ${newSize} 張牌`;
 
     const nodesEl = document.getElementById('map-nodes');
     nodesEl.innerHTML = '';

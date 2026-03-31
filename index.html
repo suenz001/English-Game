@@ -25,7 +25,8 @@
         <button id="start-btn">🎮 開始冒險</button>
         <div class="title-buttons">
             <button class="secondary-btn" id="help-btn">📖 說明</button>
-            <button class="secondary-btn" id="deck-editor-btn">🃏 編輯牌組</button>
+            <button class="secondary-btn" id="deck-editor-btn">🎒 攜帶卡片</button>
+            <button class="secondary-btn" id="album-btn">📖 我的卡冊</button>
             <button class="secondary-btn" id="admin-btn">⚙️ 家長設定</button>
         </div>
     </div>
@@ -147,21 +148,21 @@
         </div>
     </div>
 
-    <!-- ===== 編輯牌組 Modal ===== -->
+    <!-- ===== 攜帶卡片 Modal ===== -->
     <div id="deck-editor-modal" class="hidden">
         <div class="deck-editor-container">
-            <div class="deck-editor-title">🃏 編輯牌組</div>
+            <div class="deck-editor-title">🎒 戰前準備：攜帶卡片</div>
 
             <div class="deck-zone">
-                <h3>⚔️ 上陣牌組 (<span id="de-deck-count">0</span>張) <small>最少8張</small></h3>
+                <h3>⚔️ 攜帶卡片 (<span id="de-deck-count">0</span>/5張) <small>最多5張</small></h3>
                 <div id="de-deck-cards" class="de-grid"></div>
-                <div id="de-deck-empty" class="de-empty">點擊下方牌庫中的卡片來加入牌組</div>
+                <div id="de-deck-empty" class="de-empty">點擊下方卡冊中的卡片攜帶出戰</div>
             </div>
 
             <div class="collection-zone">
-                <h3>📦 牌庫 (<span id="de-coll-count">0</span>張)</h3>
+                <h3>📦 我的卡冊 (<span id="de-coll-count">0</span>張)</h3>
                 <div id="de-coll-cards" class="de-grid"></div>
-                <div id="de-coll-empty" class="de-empty">還沒有可用的卡片</div>
+                <div id="de-coll-empty" class="de-empty">還沒有收集到卡片，請先挑戰冒險地圖！</div>
             </div>
 
             <div class="de-actions">

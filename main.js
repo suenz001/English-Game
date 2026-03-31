@@ -87,7 +87,7 @@ document.getElementById('deck-editor-btn').addEventListener('click', openDeckEdi
 document.getElementById('de-close-btn').addEventListener('click', () => { document.getElementById('deck-editor-modal').classList.add('hidden'); });
 
 document.getElementById('de-save-btn').addEventListener('click', () => {
-    if (tempDeck.length < 8) { Toast.fire({ icon: 'warning', title: '牌組至少需要8張卡！' }); return; }
+    if (tempDeck.length === 0) { Toast.fire({ icon: 'warning', title: '牌組不能為空！' }); return; }
     import('./js/data.js').then(d => {
         d.savePlayerDeckConfig(tempDeck);
         document.getElementById('deck-editor-modal').classList.add('hidden');
@@ -107,12 +107,9 @@ function openDeckEditor() {
         let deckConfig = d.getPlayerDeckConfig();
 
         // First time: initialize collection + deck from STARTER_DECK (filtered to active)
-        if (collection.length === 0) {
-            collection = d.STARTER_DECK.filter(id => activeCards.some(c => c.id === id));
-            d.savePlayerCollection(collection);
-        }
+        // 完全空的出戰設定，直接給空陣列
         if (deckConfig.length === 0) {
-            deckConfig = [...collection];
+            deckConfig = [];
             d.savePlayerDeckConfig(deckConfig);
         }
 
@@ -190,6 +187,10 @@ function renderDeckEditor() {
         });
         collContainer.querySelectorAll('.de-card[data-action="add"]').forEach(el => {
             el.addEventListener('click', () => {
+                if (tempDeck.length >= 5) {
+                    alert('最多只能攜帶 5 張卡片出戰！');
+                    return;
+                }
                 tempDeck.push(el.dataset.id);
                 renderDeckEditor();
             });
@@ -197,15 +198,50 @@ function renderDeckEditor() {
     });
 }
 
+// ===== 顯示卡冊 =====
+document.getElementById('album-btn').addEventListener('click', () => {
+    Promise.all([import('./js/data.js'), import('./js/cardart.js')]).then(([d, a]) => {
+        const modal = document.getElementById('deck-modal');
+        const container = modal.querySelector('.deck-cards');
+        const title = modal.querySelector('.deck-title');
+        const collection = d.getPlayerCollection();
+        
+        title.innerHTML = `📖 我的卡冊收藏 (${collection.length}張)`;
+        
+        if (collection.length === 0) {
+            container.innerHTML = '<div style="text-align:center;width:100%;padding:40px;color:#888;">收集冊空空如也...<br>請進入冒險地圖打敗怪物來獲得卡片！</div>';
+        } else {
+            // Count cards to show stacks
+            const collCounts = {};
+            collection.forEach(id => { collCounts[id] = (collCounts[id] || 0) + 1; });
+            const allCards = d.getAllWordCards();
+            
+            container.innerHTML = Object.entries(collCounts).map(([cardId, count]) => {
+                const card = allCards.find(c => c.id === cardId);
+                if (!card) return '';
+                const rarityKey = d.getCardRarity(card);
+                const rarity = d.RARITY_CONFIG[rarityKey];
+                const art = a.getCardArt(card.id);
+                return `<div class="deck-card rarity-${rarityKey}" style="border-color:${rarity.color}">
+                            <div class="card-art" style="width:40px;height:28px">${art}</div>
+                            <span class="card-name">${card.en} (${card.zh}) x${count}</span>
+                        </div>`;
+            }).join('');
+        }
+        
+        modal.classList.remove('hidden');
+    });
+});
+
 // ===== 說明 =====
 document.getElementById('help-btn').addEventListener('click', () => {
     Swal.fire({
         title: '📖 遊戲說明', html: `
         <div style="text-align:left;font-size:14px;line-height:1.8">
             <p><b>🎯 目標</b>：從第1層打到第10層！</p>
-            <p><b>🃏 編輯牌組</b>：在開始前可以編輯你的牌組！</p>
+            <p><b>🎒 攜帶卡片</b>：在開始前可以挑選最多 5 張卡牌攜帶入戰！</p>
             <p><b>📝 答題</b>：出牌需通過英文問答（聽音選拼字+選中文意思）</p>
-            <p><b>⚡ 防禦答題</b>：敵人攻擊時答對可減傷！</p>
+            <p><b>⚡ 防禦</b>：沒有怪攻擊時，也可以疊加護甲！</p>
             <p><b>⚔️ 攻擊</b>：紅色牌造成傷害 | <b>🛡️ 防禦</b>：藍色牌獲得護甲</p>
             <p><b>✨ 技能</b>：綠色牌特殊效果 | <b>💜 能力</b>：紫色牌永久增益</p>
             <p><b>🏕️ 休息</b>：回復HP | <b>🎁 獎勵</b>：勝利後選擇新卡牌</p>
