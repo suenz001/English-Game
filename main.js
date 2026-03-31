@@ -66,7 +66,7 @@ document.getElementById('view-deck-btn').addEventListener('click', () => {
                 const card = allCards.find(c => c.id === id); if (!card) return '';
                 const rarityKey = d.getCardRarity(card);
                 const rarity = d.RARITY_CONFIG[rarityKey];
-                return `<div class="deck-card rarity-${rarityKey}" style="border-color:${rarity.color}">
+                return `<div class="deck-card rarity-${rarityKey}" style="border-color:${rarity.color}" onclick="if(window.showCardDetail) window.showCardDetail('${card.id}')">
                     <div class="card-art" style="width:40px;height:28px">${a.getCardArt(id)}</div>
                     <span class="card-name">${card.en} (${card.zh})</span><span class="card-count">x${count}</span></div>`;
             }).join('');
@@ -151,6 +151,7 @@ function renderDeckEditor() {
             const rarityKey = d.getCardRarity(card);
             const rarity = d.RARITY_CONFIG[rarityKey];
             return `<div class="de-card rarity-${rarityKey}" data-id="${id}" data-action="remove" style="border-color:${rarity.color}">
+                <button class="card-info-btn" data-id="${id}">🔍</button>
                 <div class="de-art">${a.getCardArt(id)}</div>
                 <div class="de-name">${typeLabel[card.type]} x${count}</div>
                 <div class="de-desc">${card.desc.replace('{v}', card.value)}</div>
@@ -178,6 +179,7 @@ function renderDeckEditor() {
             const rarity = d.RARITY_CONFIG[rarityKey];
             const inDeckClass = avail <= 0 ? 'in-deck' : '';
             return `<div class="de-card ${inDeckClass} rarity-${rarityKey}" data-id="${id}" data-action="add" style="border-color:${rarity.color}">
+                <button class="card-info-btn" data-id="${id}">🔍</button>
                 <div class="de-art">${a.getCardArt(id)}</div>
                 <div class="de-name">${typeLabel[card.type]} ${avail < total ? `(${avail}/${total})` : `x${total}`}</div>
                 <div class="de-desc">${card.desc.replace('{v}', card.value)}</div>
@@ -199,6 +201,14 @@ function renderDeckEditor() {
                 }
                 tempDeck.push(el.dataset.id);
                 renderDeckEditor();
+            });
+        });
+
+        // Info button handlers
+        document.querySelectorAll('.card-info-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation(); // 阻止氣泡事件避免直接裝備/卸下
+                window.showCardDetail(btn.dataset.id);
             });
         });
     });
@@ -228,7 +238,7 @@ document.getElementById('album-btn').addEventListener('click', () => {
                 const rarityKey = d.getCardRarity(card);
                 const rarity = d.RARITY_CONFIG[rarityKey];
                 const art = a.getCardArt(card.id);
-                return `<div class="deck-card rarity-${rarityKey}" style="border-color:${rarity.color}">
+                return `<div class="deck-card rarity-${rarityKey}" style="border-color:${rarity.color}" onclick="window.showCardDetail('${card.id}')">
                             <div class="card-art" style="width:40px;height:28px">${art}</div>
                             <span class="card-name">${card.en} (${card.zh}) x${count}</span>
                         </div>`;
@@ -254,4 +264,62 @@ document.getElementById('help-btn').addEventListener('click', () => {
         </div>`,
         background: '#2d1b4e', color: '#fff', confirmButtonText: '準備出發！', confirmButtonColor: '#9b59b6',
     });
+});
+
+// ===== 全域卡牌檢視器與發音功能 =====
+let currentDetailTTS = null;
+window.showCardDetail = function(cardId) {
+    Promise.all([
+        import('./js/data.js'), 
+        import('./js/cardart.js'),
+        import('./js/speech.js')
+    ]).then(([d, a, s]) => {
+        const card = d.getAllWordCards().find(c => c.id === cardId);
+        if (!card) return;
+
+        const rarityKey = d.getCardRarity(card);
+        const rarity = d.RARITY_CONFIG[rarityKey];
+        const typeLabel = { attack: '⚔️ 攻擊', defend: '🛡️ 防禦', skill: '✨ 技能', power: '💜 能力' }[card.type];
+
+        // 綁定資料
+        document.getElementById('card-detail-en').textContent = card.en;
+        document.getElementById('card-detail-zh').textContent = card.zh;
+        document.getElementById('card-detail-art').innerHTML = a.getCardArt(card.id);
+        document.getElementById('card-detail-type').textContent = typeLabel;
+        document.getElementById('card-detail-cost').textContent = `⚡ ${card.cost}`;
+        document.getElementById('card-detail-rarity').textContent = rarity.label;
+        document.getElementById('card-detail-rarity').style.color = rarity.color;
+        document.getElementById('card-detail-desc').innerHTML = card.desc.replace('{v}', `<b>${card.value}</b>`);
+
+        // 外框顏色設定
+        document.getElementById('card-detail-container').style.borderColor = rarity.color;
+        document.getElementById('card-detail-container').style.boxShadow = `0 10px 40px ${rarity.color}44`; // 帶有顏色的光暈
+
+        // 發音按鈕邏輯
+        const ttsBtn = document.getElementById('card-detail-tts-btn');
+        const newTtsBtn = ttsBtn.cloneNode(true);
+        ttsBtn.parentNode.replaceChild(newTtsBtn, ttsBtn); // 移除舊的 event listener
+        
+        newTtsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            s.speakWord(card.en);
+        });
+
+        // 打開視窗
+        document.getElementById('card-detail-modal').classList.remove('hidden');
+    });
+};
+
+// 關閉檢視器邏輯
+const detailModal = document.getElementById('card-detail-modal');
+const closeDetailBtn = document.getElementById('card-detail-close-btn');
+
+function closeDetail() {
+    detailModal.classList.add('hidden');
+}
+
+closeDetailBtn.addEventListener('click', closeDetail);
+detailModal.addEventListener('click', (e) => {
+    // 若點擊在背景黑底而非內容區，則關閉
+    if (e.target === detailModal) closeDetail();
 });

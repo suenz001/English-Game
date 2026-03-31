@@ -776,7 +776,8 @@ export function renderBattle() {
         const artSvg = getCardArt(card.id);
         return `
             <div class="card ${card.type} ${playable ? 'playable' : 'unplayable'} rarity-${rarityKey}"
-                 data-index="${i}" data-card-type="${card.type}">
+                 data-index="${i}" data-card-type="${card.type}" data-id="${card.id}">
+                <button class="card-info-btn" data-id="${card.id}">🔍</button>
                 <div class="card-cost">${card.cost}</div>
                 <div class="card-art">${artSvg}</div>
                 <div class="card-type-label">${typeLabel}</div>
@@ -786,8 +787,18 @@ export function renderBattle() {
         `;
     }).join('');
 
-    // 設定卡牌拖曳
     setupCardDrag();
+
+    // 手牌資訊按鈕
+    handEl.querySelectorAll('.card-info-btn').forEach(btn => {
+        const handler = (e) => {
+            e.stopPropagation(); e.preventDefault();
+            if (window.showCardDetail) window.showCardDetail(btn.dataset.id);
+        };
+        btn.addEventListener('mousedown', handler);
+        btn.addEventListener('touchstart', handler);
+        btn.addEventListener('click', handler);
+    });
 
     document.getElementById('deck-count').textContent = `📚 ${s.player.deck.length}`;
     document.getElementById('discard-count').textContent = `🗑️ ${s.player.discard.length}`;
@@ -887,6 +898,7 @@ export function showCardReward(currentDeck, vocabDifficulty, callback) {
         const artSvg = getCardArt(card.id);
         return `
             <div class="reward-card rarity-${rarityKey}" data-id="${card.id}" style="border-color: ${rarity.color}">
+                <button class="card-info-btn" data-id="${card.id}">🔍</button>
                 <div class="card-cost">${card.cost}</div>
                 <div class="card-art" style="width:55px;height:38px;margin:4px auto">${artSvg}</div>
                 <div class="card-word">${card.en}</div>
@@ -901,6 +913,15 @@ export function showCardReward(currentDeck, vocabDifficulty, callback) {
     modal.classList.remove('hidden');
 
     container.querySelectorAll('.reward-card').forEach(el => {
+        // Find trailing info button and bind click correctly without triggering pick
+        const infoBtn = el.querySelector('.card-info-btn');
+        if (infoBtn) {
+            infoBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.showCardDetail) window.showCardDetail(infoBtn.dataset.id);
+            });
+        }
+
         el.addEventListener('click', async () => {
             const cardId = el.dataset.id;
             const card = WORD_CARDS.find(c => c.id === cardId);
@@ -1065,7 +1086,7 @@ export function showBattleDeckModal(type) {
         const rarityKey = getCardRarity(card);
         const rarity = RARITY_CONFIG[rarityKey];
         const art = getCardArt(card.id);
-        return `<div class="deck-card rarity-${rarityKey}" style="border-color:${rarity.color}">
+        return `<div class="deck-card rarity-${rarityKey}" style="border-color:${rarity.color}" onclick="if(window.showCardDetail) window.showCardDetail('${card.id}')">
                     <div class="card-art" style="width:40px;height:28px">${art}</div>
                     <span class="card-name">${card.en} (${card.zh})</span>
                 </div>`;

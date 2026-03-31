@@ -273,7 +273,7 @@ function renderCardPool() {
                 <div class="pool-toggle"><input type="checkbox" ${isActive ? 'checked' : ''} data-id="${card.id}"></div>
                 <div class="pool-preview">${artHtml}</div>
                 <div class="pool-info">
-                    <span class="pool-en">${card.en}</span><span class="pool-zh">${card.zh}</span>
+                    <span class="pool-en">${card.en} <button class="admin-info-btn" data-id="${card.id}" style="border:none;background:none;cursor:pointer;font-size:16px;" title="檢視卡片資訊">🔍</button></span><span class="pool-zh">${card.zh}</span>
                     <div class="pool-meta">${typeLabel[card.type]||''} ${card.desc.replace('{v}',card.value)} | ⚡${card.cost} | <span style="color:${rarityConf.color}">${rarityLabel}</span></div>
                 </div>
                 <div class="pool-img-actions">
@@ -283,6 +283,14 @@ function renderCardPool() {
                 </div>
             </div>`;
     }).join('');
+
+    // Info click events
+    container.querySelectorAll('.admin-info-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.showCardDetail) window.showCardDetail(btn.dataset.id);
+        });
+    });
 
     // Toggle events
     container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
