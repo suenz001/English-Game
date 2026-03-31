@@ -545,7 +545,10 @@ export function getCustomWords() {
 }
 
 export function getAllWordCards() {
-    return [...WORD_CARDS, ...getCustomWords()];
+    const custom = getCustomWords();
+    const customIds = new Set(custom.map(c => c.id));
+    const baseCards = WORD_CARDS.filter(c => !customIds.has(c.id));
+    return [...baseCards, ...custom];
 }
 
 export function getCustomSimilarWords() {

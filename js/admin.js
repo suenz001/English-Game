@@ -15,7 +15,12 @@ function getCustomWords() { try { return JSON.parse(localStorage.getItem(WORDS_K
 function saveCustomWords(w) { localStorage.setItem(WORDS_KEY, JSON.stringify(w)); }
 function getCustomSimilar() { try { return JSON.parse(localStorage.getItem(SIMILAR_KEY) || '{}'); } catch { return {}; } }
 function saveCustomSimilar(s) { localStorage.setItem(SIMILAR_KEY, JSON.stringify(s)); }
-function getAllWords() { return [...getCustomWords().reverse(), ...WORD_CARDS]; }
+function getAllWords() { 
+    const custom = getCustomWords();
+    const customIds = new Set(custom.map(c => c.id));
+    const baseCards = WORD_CARDS.filter(c => !customIds.has(c.id));
+    return [...custom.reverse(), ...baseCards];
+}
 function getActiveIds() { try { const r = JSON.parse(localStorage.getItem(ACTIVE_KEY)); return r ? new Set(r) : null; } catch { return null; } }
 function saveActiveIds(s) { localStorage.setItem(ACTIVE_KEY, JSON.stringify([...s])); }
 function getCardImages() { try { return JSON.parse(localStorage.getItem(IMAGES_KEY) || '{}'); } catch { return {}; } }
@@ -198,8 +203,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const similarInput = document.getElementById('word-similar').value.trim();
         const similar = similarInput ? similarInput.split(',').map(s => s.trim()).filter(Boolean) : generateSimilarWords(card.en);
         let words = getCustomWords();
-        if (editId) words = words.filter(w => w.id !== editId);
-        if (words.find(w => w.id === card.id) || WORD_CARDS.find(w => w.id === card.id)) { alert(`「${card.en}」已存在！`); return; }
+        // 允許覆寫：直接移除舊的（無論是本來就在編輯的，還是新的 ID 剛好撞到舊的自訂字）
+        words = words.filter(w => w.id !== card.id && w.id !== editId);
+        
         words.push(card);
         saveCustomWords(words);
         const s = getCustomSimilar(); s[card.id] = similar; saveCustomSimilar(s);
@@ -223,6 +229,22 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('form-title').textContent = '➕ 新增單字卡';
         document.getElementById('submit-btn').textContent = '✅ 新增卡牌';
         document.getElementById('cancel-edit-btn').classList.add('hidden');
+    });
+
+    // 監聽英文輸入，自動帶出現有屬性
+    document.getElementById('word-en').addEventListener('blur', (e) => {
+        const text = e.target.value.toLowerCase().trim();
+        if (!text) return;
+        
+        // 若已經在編輯這個字，就不再重複觸發
+        if (document.getElementById('edit-id').value === text) return;
+
+        const existing = getAllWords().find(w => w.id === text);
+        if (existing) {
+            if (confirm(`發現已存在的卡牌「${existing.en} (${existing.zh})」，是否載入其設定進行編輯或覆寫？`)) {
+                window.editWord(existing.id);
+            }
+        }
     });
 });
 
@@ -327,7 +349,7 @@ function renderWordList() {
 }
 
 window.editWord = function(id) {
-    const w = getCustomWords().find(x => x.id === id); if (!w) return;
+    const w = getAllWords().find(x => x.id === id); if (!w) return;
     document.getElementById('edit-id').value = id;
     document.getElementById('word-en').value = w.en; document.getElementById('word-zh').value = w.zh;
     document.getElementById('word-rarity').value = w.rarity || 'common';
