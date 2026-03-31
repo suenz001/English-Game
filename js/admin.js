@@ -42,10 +42,29 @@ function buildCardData(f) {
     else if (f.type==='defend') { if(f.extra==='draw1') extra.draw=1; if(f.extra==='vulnerable') extra.vulnerable=turns; if(f.extra==='weak') extra.weak=turns; }
     else if (f.type==='skill') { if(f.extra==='heal') extra.heal=true; if(f.extra==='draw') extra.draw=true; if(f.extra==='energy') extra.energy=true; }
     else if (f.type==='power') { if(f.extra==='permAtk') extra.permAtk=true; if(f.extra==='regen') extra.regen=true; if(f.extra==='thorns') extra.thorns=true; }
+    
     const tpl = { attack:'攻擊，造成 {v} 點傷害', defend:'防禦，獲得 {v} 點護甲', skill:'效果 {v}', power:'能力 {v}' };
+    let baseDesc = `${f.emoji||'⭐'} ${tpl[f.type]}`;
+    
+    // 加上額外效果的說明文字（含回合數）
+    if (f.extra) {
+        if (f.extra === 'poison') baseDesc += `，並給予 ${turns} 毒`;
+        if (f.extra === 'burn') baseDesc += `，並燒毀 ${turns} 回合`;
+        if (f.extra === 'hits2') baseDesc += ` (攻擊兩次)`;
+        if (f.extra === 'vulnerable') baseDesc += `，並給予 ${turns} 回合易傷`;
+        if (f.extra === 'weak') baseDesc += `，並給予 ${turns} 回合虛弱`;
+        if (f.extra === 'draw1') baseDesc += `，並抽 1 張牌`;
+        if (f.extra === 'heal') baseDesc = `${f.emoji||'⭐'} 回復 {v} 血量`;
+        if (f.extra === 'draw') baseDesc = `${f.emoji||'⭐'} 抽 {v} 張牌`;
+        if (f.extra === 'energy') baseDesc = `${f.emoji||'⭐'} 獲得 {v} 能量`;
+        if (f.extra === 'permAtk') baseDesc = `${f.emoji||'⭐'} 戰鬥中攻擊力 +{v}`;
+        if (f.extra === 'regen') baseDesc = `${f.emoji||'⭐'} 戰鬥中每回合回復 ${Math.max(1, Math.floor(f.value/2))} 血量`;
+        if (f.extra === 'thorns') baseDesc = `${f.emoji||'⭐'} 戰鬥中反彈 {v} 傷害`;
+    }
+
     return { id: f.en.toLowerCase().trim(), en: f.en.toLowerCase().trim(), zh: f.zh.trim(), difficulty: 1, rarity: f.rarity || 'common',
         type: f.type, cost: parseInt(f.cost), value: parseInt(f.value), emoji: f.emoji || '⭐',
-        desc: `${f.emoji||'⭐'} ${tpl[f.type]}`, extra: Object.keys(extra).length ? extra : undefined };
+        desc: baseDesc, extra: Object.keys(extra).length ? extra : undefined };
 }
 
 // ===== 圖片壓縮 =====

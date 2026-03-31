@@ -435,12 +435,12 @@ async function enemyTurn() {
         const attack = enemy.intent;
         enemy.block = 0;
 
-        // 防禦答題
+        // 防禦答題 (依照需求移除，以加快戰鬥節奏)
         let reduction = 0;
-        if (attack.damage > 0) {
-            sfxDefenseQuiz();
-            reduction = await showDefenseQuiz();
-        }
+        // if (attack.damage > 0) {
+        //     sfxDefenseQuiz();
+        //     reduction = await showDefenseQuiz();
+        // }
 
         // 攻擊動畫 (如果有傷害值，且玩家沒死的話，才射出圖示)
         if (attack.damage > 0) {
