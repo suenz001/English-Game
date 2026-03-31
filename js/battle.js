@@ -310,7 +310,7 @@ async function finishQuiz(correct, card, handIndex, quizEl) {
 }
 
 // ===== 執行卡牌效果 =====
-function executeCard(card, handIndex, correct) {
+async function executeCard(card, handIndex, correct) {
     const s = battleState;
 
     s.player.energy -= card.cost;
@@ -325,18 +325,28 @@ function executeCard(card, handIndex, correct) {
     }
 
     addLog(`✅ 答對！使用 ${card.emoji} ${card.en}（${card.zh}）`);
+    sfxCardPlay();
+    renderBattle(); // 先更新畫面（顯示卡牌消耗）
+    
+    // ★ 延遲 1.2 秒讓玩家看到特效動畫
+    await delay(1200);
 
     const strength = s.player.buffs.strength + s.player.buffs.tempStrength;
     const multiplier = s.player.buffs.doubleAtk ? 2 : 1;
     const extra = card.extra || {};
     const target = s.enemies[targetEnemyIdx]; // 攻擊目標
 
-    sfxCardPlay();
     const weakMult = s.player.buffs.weak > 0 ? 0.5 : 1;
     const vulnMult = target && target.buffs.vulnerable > 0 ? 1.5 : 1;
     switch (card.type) {
         case 'attack': {
             if (!target || target.hp <= 0) break;
+            
+            // 飛行道具動畫
+            const playerEl = document.querySelector('.player-sprite');
+            const targetEl = document.querySelector(`.enemy-unit[data-enemy-idx="${targetEnemyIdx}"]`);
+            await animateProjectile(playerEl, targetEl, card.emoji);
+            
             sfxAttack();
             const hits = extra.hits || 1;
             let totalDmg = 0;
@@ -366,7 +376,6 @@ function executeCard(card, handIndex, correct) {
             addLog(`  🛡️ 獲得 ${card.value} 點護甲`);
             showFx('🛡️', 'fx-shield');
             if (extra.draw) drawCards(typeof extra.draw === 'number' ? extra.draw : 1);
-            // 防禦牌的 debuff 施加到所有活的敵人
             if (extra.vulnerable) { s.enemies.filter(e => e.hp > 0).forEach(e => { e.buffs.vulnerable += extra.vulnerable; }); addLog(`  ⚠️ 所有敵人易傷 ${extra.vulnerable} 回合`); }
             if (extra.weak) { s.enemies.filter(e => e.hp > 0).forEach(e => { e.buffs.weak += extra.weak; }); addLog(`  😵‍💫 所有敵人虛弱 ${extra.weak} 回合`); }
             if (extra.reflect) { if (target) { target.hp -= extra.reflect; addLog(`  🔄 反彈 ${extra.reflect} 傷害`); } }
@@ -433,7 +442,13 @@ async function enemyTurn() {
             reduction = await showDefenseQuiz();
         }
 
-        // 攻擊動畫
+        // 攻擊動畫 (如果有傷害值，且玩家沒死的話，才射出圖示)
+        if (attack.damage > 0) {
+            const enemyEl = document.querySelector(`.enemy-unit[data-enemy-idx="${ei}"]`);
+            const playerEl = document.querySelector('.player-sprite');
+            await animateProjectile(enemyEl, playerEl, attack.emoji);
+        }
+        
         sfxEnemyAttack();
         await delay(300);
 
@@ -692,13 +707,40 @@ export function renderBattle() {
         if (alive && e.intent) {
             const it = e.intent;
             let t = it.emoji + ' ';
-            if (it.damage > 0) t += Math.floor((it.damage + e.buffs.strength) * (e.buffs.weak > 0 ? 0.5 : 1));
-            if (it.block) t += `🛡️${it.block}`;
-            if (it.heal) t += `💚${it.heal}`;
-            if (it.applyVuln) t += ` ⚠️`;
-            if (it.applyWeak) t += ` 😵‍💫`;
-            if (it.buffSelf) t += ` 💪+${it.buffSelf}`;
-            intentHtml = `<div class="enemy-intent-mini">${t}</div>`;
+            let detail = ''; // Tooltip 自訂文字
+            
+            const realDmg = Math.floor((it.damage + e.buffs.strength) * (e.buffs.weak > 0 ? 0.5 : 1));
+            
+            if (it.damage > 0) {
+                t += realDmg;
+                detail += `造成 ${realDmg} 點傷害<br>`;
+            }
+            if (it.block) {
+                t += `🛡️${it.block}`;
+                detail += `獲得 ${it.block} 點護甲<br>`;
+            }
+            if (it.heal) {
+                t += `💚${it.heal}`;
+                detail += `回復 ${it.heal} 點血量<br>`;
+            }
+            if (it.applyVuln) {
+                t += ` ⚠️`;
+                detail += `施加 ${it.applyVuln} 回合易傷<br>`;
+            }
+            if (it.applyWeak) {
+                t += ` 😵‍💫`;
+                detail += `施加 ${it.applyWeak} 回合虛弱<br>`;
+            }
+            if (it.buffSelf) {
+                t += ` 💪+${it.buffSelf}`;
+                detail += `增加 ${it.buffSelf} 點力量<br>`;
+            }
+            
+            intentHtml = `
+            <div class="enemy-intent-mini">
+                ${t}
+                <div class="tooltip-text">${detail || '準備行動'}</div>
+            </div>`;
         }
 
         return `<div class="enemy-unit ${alive ? '' : 'defeated'} ${isTarget ? 'targeted' : ''}" data-enemy-idx="${i}">
@@ -938,6 +980,48 @@ function showFloatingNumber(value, target, type = 'damage') {
 
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ===== 飛行道具動畫 =====
+function animateProjectile(startEl, endEl, emojiName) {
+    return new Promise(resolve => {
+        if (!startEl || !endEl) return resolve();
+        
+        const startRect = startEl.getBoundingClientRect();
+        const endRect = endEl.getBoundingClientRect();
+        
+        const proj = document.createElement('div');
+        proj.className = 'projectile';
+        proj.textContent = emojiName;
+        
+        // 初始位置設定在發射者中心
+        const startX = startRect.left + startRect.width / 2 - 20; // 減去寬度一半微調
+        const startY = startRect.top + startRect.height / 2 - 20;
+        
+        proj.style.left = startX + 'px';
+        proj.style.top = startY + 'px';
+        proj.style.transform = `translate(0, 0)`;
+        
+        document.body.appendChild(proj);
+        
+        // 強制重繪確保初始位置正確
+        proj.getBoundingClientRect();
+        
+        // 計算終點與旋轉角度
+        const deltaX = endRect.left + endRect.width / 2 - 20 - startX;
+        const deltaY = endRect.top + endRect.height / 2 - 20 - startY;
+        
+        // 加入旋轉增添動態感
+        const rotate = deltaX > 0 ? 360 : -360; 
+        
+        proj.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${rotate}deg)`;
+        
+        // 等待動畫結束後移除並 Resolve
+        setTimeout(() => {
+            proj.remove();
+            resolve();
+        }, 400); // 與 CSS transition 400ms 對齊
+    });
 }
 
 export function getBattleState() {

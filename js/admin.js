@@ -37,8 +37,9 @@ function generateSimilarWords(word) {
 
 function buildCardData(f) {
     const extra = {};
-    if (f.type==='attack') { if(f.extra==='poison') extra.poison=2; if(f.extra==='burn') extra.burn=2; if(f.extra==='hits2') extra.hits=2; if(f.extra==='vulnerable') extra.vulnerable=2; if(f.extra==='weak') extra.weak=2; }
-    else if (f.type==='defend') { if(f.extra==='draw1') extra.draw=1; if(f.extra==='vulnerable') extra.vulnerable=2; if(f.extra==='weak') extra.weak=2; }
+    const turns = parseInt(f.debuffTurns || 2);
+    if (f.type==='attack') { if(f.extra==='poison') extra.poison=turns; if(f.extra==='burn') extra.burn=turns; if(f.extra==='hits2') extra.hits=2; if(f.extra==='vulnerable') extra.vulnerable=turns; if(f.extra==='weak') extra.weak=turns; }
+    else if (f.type==='defend') { if(f.extra==='draw1') extra.draw=1; if(f.extra==='vulnerable') extra.vulnerable=turns; if(f.extra==='weak') extra.weak=turns; }
     else if (f.type==='skill') { if(f.extra==='heal') extra.heal=true; if(f.extra==='draw') extra.draw=true; if(f.extra==='energy') extra.energy=true; }
     else if (f.type==='power') { if(f.extra==='permAtk') extra.permAtk=true; if(f.extra==='regen') extra.regen=true; if(f.extra==='thorns') extra.thorns=true; }
     const tpl = { attack:'攻擊，造成 {v} 點傷害', defend:'防禦，獲得 {v} 點護甲', skill:'效果 {v}', power:'能力 {v}' };
@@ -122,12 +123,47 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== Custom word form =====
     const typeSelect = document.getElementById('word-type');
     const extraSelect = document.getElementById('word-extra');
+    const raritySelect = document.getElementById('word-rarity');
     typeSelect.addEventListener('change', updateExtra);
+    extraSelect.addEventListener('change', updateDebuffTurns);
+    raritySelect.addEventListener('change', updateRarityGuide);
     updateExtra();
+    updateRarityGuide();
 
     function updateExtra() {
         const opts = EXTRA_OPTIONS[typeSelect.value] || [];
         extraSelect.innerHTML = opts.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+        updateDebuffTurns();
+    }
+    
+    function updateDebuffTurns() {
+        const t = extraSelect.value;
+        const group = document.getElementById('debuff-duration-group');
+        if (['poison', 'burn', 'weak', 'vulnerable'].includes(t)) {
+            group.style.display = 'block';
+        } else {
+            group.style.display = 'none';
+        }
+    }
+
+    function updateRarityGuide() {
+        const r = raritySelect.value;
+        const config = RARITY_CONFIG[r];
+        if (!config || !config.guide) {
+            document.getElementById('rarity-guide').style.display = 'none';
+            return;
+        }
+        document.getElementById('rarity-guide').style.display = 'block';
+        document.getElementById('rarity-guide').innerHTML = `
+            <div class="rarity-guide-title">📊 ${config.label}卡 建議數值範圍</div>
+            <div style="color: #bbb">${config.guide.desc}</div>
+            <div class="guide-stats">
+                <span class="guide-stat">⚔️ 攻擊: <strong>${config.guide.attack}</strong></span>
+                <span class="guide-stat">🛡️ 防禦: <strong>${config.guide.defend}</strong></span>
+                <span class="guide-stat">✨ 技能: <strong>${config.guide.skill}</strong></span>
+                <span class="guide-stat">⌛ 狀態: <strong>${config.guide.debuff}</strong></span>
+            </div>
+        `;
     }
 
     document.getElementById('word-form').addEventListener('submit', e => {
@@ -138,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
             rarity: document.getElementById('word-rarity').value, type: typeSelect.value,
             cost: document.getElementById('word-cost').value, value: document.getElementById('word-value').value,
             emoji: document.getElementById('word-emoji').value, extra: extraSelect.value,
+            debuffTurns: document.getElementById('word-debuff-turns').value
         });
         const similarInput = document.getElementById('word-similar').value.trim();
         const similar = similarInput ? similarInput.split(',').map(s => s.trim()).filter(Boolean) : generateSimilarWords(card.en);
@@ -274,11 +311,37 @@ window.editWord = function(id) {
     const w = getCustomWords().find(x => x.id === id); if (!w) return;
     document.getElementById('edit-id').value = id;
     document.getElementById('word-en').value = w.en; document.getElementById('word-zh').value = w.zh;
-    document.getElementById('word-rarity').value = w.rarity || 'common'; document.getElementById('word-type').value = w.type;
+    document.getElementById('word-rarity').value = w.rarity || 'common';
+    document.getElementById('word-rarity').dispatchEvent(new Event('change'));
+    document.getElementById('word-type').value = w.type;
     document.getElementById('word-type').dispatchEvent(new Event('change'));
-    document.getElementById('word-cost').value = w.cost; document.getElementById('word-value').value = w.value;
+    document.getElementById('word-cost').value = w.cost; 
+    document.getElementById('word-value').value = w.value;
     document.getElementById('word-emoji').value = w.emoji;
-    const similar = getCustomSimilar(); document.getElementById('word-similar').value = (similar[id]||[]).join(', ');
+    
+    // 判斷原來的 extra
+    if (w.extra) {
+        if (w.extra.poison) { document.getElementById('word-extra').value = 'poison'; document.getElementById('word-debuff-turns').value = w.extra.poison; }
+        else if (w.extra.burn) { document.getElementById('word-extra').value = 'burn'; document.getElementById('word-debuff-turns').value = w.extra.burn; }
+        else if (w.extra.hits) document.getElementById('word-extra').value = 'hits2';
+        else if (w.extra.vulnerable) { document.getElementById('word-extra').value = 'vulnerable'; document.getElementById('word-debuff-turns').value = w.extra.vulnerable; }
+        else if (w.extra.weak) { document.getElementById('word-extra').value = 'weak'; document.getElementById('word-debuff-turns').value = w.extra.weak; }
+        else if (w.extra.draw) {
+            if (w.type === 'skill') document.getElementById('word-extra').value = 'draw';
+            else document.getElementById('word-extra').value = 'draw1'; // for defend
+        }
+        else if (w.extra.energy) document.getElementById('word-extra').value = 'energy';
+        else if (w.extra.heal) document.getElementById('word-extra').value = 'heal';
+        else if (w.extra.permAtk) document.getElementById('word-extra').value = 'permAtk';
+        else if (w.extra.regen) document.getElementById('word-extra').value = 'regen';
+        else if (w.extra.thorns) document.getElementById('word-extra').value = 'thorns';
+    } else {
+        document.getElementById('word-extra').value = '';
+    }
+    document.getElementById('word-extra').dispatchEvent(new Event('change'));
+    
+    const similar = getCustomSimilar(); 
+    document.getElementById('word-similar').value = (similar[id]||[]).join(', ');
     document.getElementById('form-title').textContent = '✏️ 編輯單字卡';
     document.getElementById('submit-btn').textContent = '💾 儲存';
     document.getElementById('cancel-edit-btn').classList.remove('hidden');

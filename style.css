@@ -377,6 +377,55 @@ body {
     border: 1px solid rgba(231,76,60,0.15);
     border-radius: 8px;
     margin-bottom: 4px;
+    position: relative;
+    cursor: help;
+}
+.enemy-intent-mini .tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    width: max-content;
+    max-width: 150px;
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    text-align: center;
+    border-radius: 8px;
+    padding: 6px 10px;
+    position: absolute;
+    z-index: 100;
+    bottom: 125%; /* Position above the icon */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.1em;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    line-height: 1.4;
+    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.enemy-intent-mini .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
+}
+.enemy-intent-mini:hover .tooltip-text,
+.enemy-intent-mini:active .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 飛行道具動畫 */
+.projectile {
+    position: fixed;
+    z-index: 999;
+    font-size: 2.5em; /* Emoji 大小 */
+    pointer-events: none;
+    transition: transform 0.4s ease-in;
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
 }
 
 .enemy-hp-bar-mini {

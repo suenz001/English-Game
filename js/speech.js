@@ -1,62 +1,32 @@
-// ===== 語音系統（Blob 快取版）=====
-// 預載音檔到記憶體 Blob，避免第一次播放斷斷續續
+// ===== 語音系統（優化快取與穩定音源版）=====
+// 解決原本 Google TTS 會因為 CORS 阻擋導致 Blob 快取失敗，以及頻繁請求被限制而產生的延遲問題。
 
 let currentAudio = null;
 let preloaded = false;
-const audioCache = new Map(); // word -> blobURL
+// 快取改為儲存 Audio 物件實例，而不是 URL 字串或 Blob
+const audioCache = new Map(); 
 
-// Google TTS URL
+// 改用有道詞典的開放 API (type=2 代表美式發音)，對單字發音的反應速度更快，且不易被阻擋
 function ttsUrl(word) {
-    return `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(word)}&tl=en&client=tw-ob`;
+    return `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(word)}&type=2`;
 }
 
-// ===== 預載入：下載到 Blob 快取 =====
+// ===== 預載入：建立 Audio 物件並交由瀏覽器底層快取 =====
 export function preloadWords(words) {
     if (preloaded) return;
     preloaded = true;
     const unique = [...new Set(words.map(w => w.toLowerCase().trim()))];
-    let i = 0;
 
-    function next() {
-        if (i >= unique.length) {
-            console.log(`🔊 已預載 ${audioCache.size}/${unique.length} 個單字音檔`);
-            return;
+    unique.forEach(word => {
+        if (!audioCache.has(word)) {
+            const audio = new Audio();
+            audio.preload = 'auto'; // 提示瀏覽器預先下載音檔
+            audio.src = ttsUrl(word);
+            audio.load(); // 強制觸發下載
+            audioCache.set(word, audio);
         }
-        const word = unique[i++];
-        if (audioCache.has(word)) { setTimeout(next, 50); return; }
-
-        // 用 fetch 下載到 Blob 快取
-        fetch(ttsUrl(word), { mode: 'no-cors' })
-            .then(r => r.blob())
-            .then(blob => {
-                if (blob.size > 0) {
-                    audioCache.set(word, URL.createObjectURL(blob));
-                }
-            })
-            .catch(() => {
-                // fetch no-cors 會回傳 opaque response，改用 Audio 預載
-                preloadViaAudio(word);
-            })
-            .finally(() => setTimeout(next, 200));
-    }
-    next();
-}
-
-// 用 Audio 預載（備用）
-function preloadViaAudio(word) {
-    return new Promise(resolve => {
-        const audio = new Audio();
-        audio.preload = 'auto';
-        audio.src = ttsUrl(word);
-        audio.oncanplaythrough = () => {
-            // 標記已載入（但無法存 blob，靠 HTTP 快取）
-            audioCache.set(word, ttsUrl(word));
-            resolve();
-        };
-        audio.onerror = resolve;
-        audio.load();
-        setTimeout(resolve, 3000); // 安全超時
     });
+    console.log(`🔊 已發送預載請求：${unique.length} 個單字音檔`);
 }
 
 // ===== 播放單字（核心函數）=====
@@ -74,7 +44,13 @@ export function speakWord(word, rate = 1.0) {
             resolve();
         }
 
-        const timeout = setTimeout(finish, 5000);
+        // 安全超時機制
+        const timeout = setTimeout(() => {
+            if (!settled) {
+                console.log('⚠️ Audio 播放超時，改用 speechSynthesis');
+                useSpeechSynthesis(key, rate).then(finish);
+            }
+        }, 3000);
 
         function finishClean() {
             clearTimeout(timeout);
@@ -82,26 +58,39 @@ export function speakWord(word, rate = 1.0) {
         }
 
         try {
-            // 優先使用快取的 Blob URL
-            const cachedSrc = audioCache.get(key) || ttsUrl(key);
-            const audio = new Audio(cachedSrc);
+            // 從快取取得已準備好的 Audio 物件，若無則當下建立
+            let audio = audioCache.get(key);
+            if (!audio) {
+                audio = new Audio(ttsUrl(key));
+                audioCache.set(key, audio);
+            }
+
+            // 每次播放前重置播放進度
+            audio.currentTime = 0;
+            
+            // 支援直接調整 HTML5 Audio 的播放速度
+            if (audio.playbackRate !== undefined) {
+                audio.playbackRate = rate;
+            }
+
             currentAudio = audio;
             audio.onended = finishClean;
 
             audio.onerror = () => {
-                console.log('⚠️ Audio 播放失敗，改用 speechSynthesis');
+                console.log('⚠️ Audio 音檔載入失敗，改用 speechSynthesis');
                 clearTimeout(timeout);
                 useSpeechSynthesis(key, rate).then(finish);
             };
 
             const playPromise = audio.play();
-            if (playPromise) {
-                playPromise.catch(() => {
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log('⚠️ Audio 播放被阻擋或失敗:', error);
                     clearTimeout(timeout);
                     useSpeechSynthesis(key, rate).then(finish);
                 });
             }
-        } catch {
+        } catch (e) {
             clearTimeout(timeout);
             useSpeechSynthesis(key, rate).then(finish);
         }
@@ -126,7 +115,8 @@ function stopCurrent() {
 
 // ===== 慢速朗讀 =====
 export function speakWordSlowly(word) {
-    return useSpeechSynthesis(word, 0.6);
+    // 直接利用 HTML5 Audio 的 playbackRate 來降速，保留原本的人聲而不是變回機器音
+    return speakWord(word, 0.6);
 }
 
 // ===== speechSynthesis 備用方案 =====
