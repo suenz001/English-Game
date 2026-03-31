@@ -1175,7 +1175,17 @@ body {
 /* 精靈動畫 */
 .enemy-sprite-mini.anim-hit { animation: spriteHit 0.3s ease; }
 @keyframes spriteHit { 0%{filter:brightness(1)} 30%{filter:brightness(3) hue-rotate(340deg)} 60%{transform:translateX(8px)} 100%{filter:brightness(1);transform:translateX(0)} }
-.player-sprite.anim-hit { animation: spriteHit 0.3s ease; }
+.player-sprite.anim-hit { animation: playerHitFlash 0.5s ease; }
+@keyframes playerHitFlash {
+    0%   { filter: brightness(1); transform: translateX(0); }
+    10%  { filter: brightness(3) sepia(1) saturate(5) hue-rotate(-10deg); transform: translateX(-8px); }
+    20%  { filter: brightness(0.4); transform: translateX(6px); }
+    30%  { filter: brightness(3) sepia(1) saturate(5) hue-rotate(-10deg); transform: translateX(-4px); }
+    40%  { filter: brightness(0.5); transform: translateX(3px); }
+    50%  { filter: brightness(2.5) sepia(1) saturate(4); transform: translateX(-2px); }
+    70%  { filter: brightness(0.6); transform: translateX(1px); }
+    100% { filter: brightness(1); transform: translateX(0); }
+}
 .enemy-sprite-mini.anim-attack { animation: spriteAttack 0.4s ease; }
 @keyframes spriteAttack { 0%{transform:translateY(0)} 30%{transform:translateY(25px) scale(1.1)} 60%{transform:translateY(10px)} 100%{transform:translateY(0)} }
 .player-sprite.anim-attack { animation: playerAttack 0.4s ease; }

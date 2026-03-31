@@ -542,6 +542,9 @@ function applyEnemyAttack(enemy, attack, damageReduction) {
         sfxHit();
         screenShake();
         showFloatingNumber(dmg, 'player');
+        // 玩家受擊閃爍
+        const pSprite = document.querySelector('.player-sprite');
+        if (pSprite) { pSprite.classList.remove('anim-hit'); void pSprite.offsetWidth; pSprite.classList.add('anim-hit'); setTimeout(() => pSprite.classList.remove('anim-hit'), 550); }
         if (s.player.buffs.thorns > 0) {
             enemy.hp -= s.player.buffs.thorns;
             addLog(`  🌹 荊棘反彈 ${s.player.buffs.thorns} 點傷害`);
