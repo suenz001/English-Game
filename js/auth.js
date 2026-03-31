@@ -11,6 +11,7 @@ export function initAuthUI() {
     const userEmail = document.getElementById('user-email');
     const logoutBtn = document.getElementById('logout-btn');
 
+    let isFirstCheck = true;
     // 監聽狀態
     onUserChange(user => {
         if (user) {
@@ -20,7 +21,14 @@ export function initAuthUI() {
         } else {
             loginBtn.classList.remove('hidden');
             userInfo.classList.add('hidden');
+            // 未登入情況下重整網頁，清空卡冊等進度，達成「從頭開始」的設計
+            if (isFirstCheck) {
+                localStorage.removeItem('vocabSpire_playerCollection');
+                localStorage.removeItem('vocabSpire_playerDeckConfig');
+                console.log('Guest session detected: Collection wiped.');
+            }
         }
+        isFirstCheck = false;
     });
 
     // 登入按鈕

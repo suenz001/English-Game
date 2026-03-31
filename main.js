@@ -117,6 +117,12 @@ function openDeckEditor() {
         const activeIds = new Set(activeCards.map(c => c.id));
         collection = collection.filter(id => activeIds.has(id));
         deckConfig = deckConfig.filter(id => activeIds.has(id) && collection.includes(id));
+        
+        // 如果舊存檔帶入了超過 5 張卡，直接裁斷並修正存檔
+        if (deckConfig.length > 5) {
+            deckConfig = deckConfig.slice(0, 5);
+            d.savePlayerDeckConfig(deckConfig);
+        }
 
         tempCollection = [...collection];
         tempDeck = [...deckConfig];
