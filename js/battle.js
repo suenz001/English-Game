@@ -435,24 +435,70 @@ async function enemyTurn() {
         const attack = enemy.intent;
         enemy.block = 0;
 
-        // 防禦答題 (依照需求移除，以加快戰鬥節奏)
-        let reduction = 0;
-        // if (attack.damage > 0) {
-        //     sfxDefenseQuiz();
-        //     reduction = await showDefenseQuiz();
-        // }
+        const enemyEl = document.querySelector(`.enemy-unit[data-enemy-idx="${ei}"]`);
+        const playerEl = document.querySelector('.player-sprite');
 
-        // 攻擊動畫 (如果有傷害值，且玩家沒死的話，才射出圖示)
+        // 攻擊動畫 (如果有傷害值)
         if (attack.damage > 0) {
-            const enemyEl = document.querySelector(`.enemy-unit[data-enemy-idx="${ei}"]`);
-            const playerEl = document.querySelector('.player-sprite');
             await animateProjectile(enemyEl, playerEl, attack.emoji);
         }
-        
-        sfxEnemyAttack();
+
+        // 自我增益動畫：力量提升
+        if (attack.buffSelf) {
+            glowElement(enemyEl, 'enemy-buff-glow');
+            showStatusFx(enemyEl, '💪', `力量+${attack.buffSelf}`, '#f39c12');
+            await delay(500);
+        }
+
+        // 自我防禦動畫：獲得護甲
+        if (attack.block) {
+            glowElement(enemyEl, 'enemy-block-glow');
+            showStatusFx(enemyEl, '🛡️', `護甲+${attack.block}`, '#4dabf7');
+            await delay(400);
+        }
+
+        // 自我回血動畫
+        if (attack.heal) {
+            glowElement(enemyEl, 'enemy-heal-glow');
+            showStatusFx(enemyEl, '💚', `回復${attack.heal}`, '#2ecc71');
+            await delay(400);
+        }
+
+        // 施加易傷動畫 → 目標是玩家
+        if (attack.applyVuln) {
+            glowElement(playerEl, 'player-debuff-flash');
+            showStatusFx(playerEl, '⚠️', `易傷${attack.applyVuln}回合`, '#e67e22');
+            await delay(500);
+        }
+
+        // 施加虛弱動畫 → 目標是玩家
+        if (attack.applyWeak) {
+            glowElement(playerEl, 'player-debuff-flash');
+            showStatusFx(playerEl, '😵‍💫', `虛弱${attack.applyWeak}回合`, '#be4bdb');
+            await delay(500);
+        }
+
+        // 灼燒動畫
+        if (attack.burn) {
+            glowElement(playerEl, 'player-debuff-flash');
+            showStatusFx(playerEl, '🔥', '灼燒！', '#e74c3c');
+            await delay(400);
+        }
+
+        // 毒素動畫
+        if (attack.poison) {
+            glowElement(playerEl, 'player-debuff-flash');
+            showStatusFx(playerEl, '🧪', '中毒！', '#27ae60');
+            await delay(400);
+        }
+
+        // 純攻擊音效（有傷害時才播）
+        if (attack.damage > 0) {
+            sfxEnemyAttack();
+        }
         await delay(300);
 
-        applyEnemyAttack(enemy, attack, reduction);
+        applyEnemyAttack(enemy, attack, 0);
 
         if (s.player.hp <= 0) { handleDefeat(); return; }
         renderBattle();
@@ -1010,6 +1056,25 @@ function showFloatingNumber(value, target, type = 'damage') {
     el.textContent = type === 'damage' ? `-${value}` : type === 'heal' ? `+${value}` : `🛡️${value}`;
     fxLayer.appendChild(el);
     setTimeout(() => el.remove(), 800);
+}
+
+// ===== 狀態增減益浮動特效 =====
+function showStatusFx(targetEl, emoji, label, color) {
+    if (!targetEl) return;
+    const rect = targetEl.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'status-fx';
+    el.innerHTML = `${emoji}<span class="status-label" style="color:${color}">${label}</span>`;
+    el.style.left = (rect.left + rect.width / 2) + 'px';
+    el.style.top = (rect.top + rect.height / 2) + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+}
+
+function glowElement(el, cssClass, duration = 600) {
+    if (!el) return;
+    el.classList.add(cssClass);
+    setTimeout(() => el.classList.remove(cssClass), duration);
 }
 
 function delay(ms) {
