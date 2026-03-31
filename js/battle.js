@@ -961,7 +961,20 @@ function showFx(emoji, cssClass) {
 }
 
 function playAttackFx() {
-    showFx('⚔️', 'fx-slash');
+    const targetEl = document.querySelector('.enemy-unit.targeted');
+    if (targetEl) {
+        const rect = targetEl.getBoundingClientRect();
+        const el = document.createElement('div');
+        el.className = 'fx-slash';
+        el.textContent = '⚔️';
+        el.style.position = 'fixed';
+        el.style.left = (rect.left + rect.width / 2) + 'px';
+        el.style.top = (rect.top + rect.height / 2) + 'px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 400);
+    } else {
+        showFx('⚔️', 'fx-slash');
+    }
     const playerSprite = document.querySelector('.player-sprite');
     if (playerSprite) { playerSprite.classList.add('anim-attack'); setTimeout(() => playerSprite.classList.remove('anim-attack'), 400); }
 }
