@@ -33,6 +33,7 @@ const EXTRA_OPTIONS = {
     attack: [{ value: '', label: '無' },{ value: 'poison', label: '🧪 中毒' },{ value: 'hits2', label: '⚔️ 二連擊' },{ value: 'vulnerable', label: '⚠️ 易傷(受傷1.5倍)' },{ value: 'weak', label: '😵‍💫 虛弱(傷害0.5倍)' }],
     defend: [{ value: '', label: '無' },{ value: 'draw1', label: '🃏 抽1張牌' },{ value: 'draw2', label: '🃏 抽2張牌' },{ value: 'energy1', label: '⚡ 獲得1點能量' },{ value: 'energy2', label: '⚡ 獲得2點能量' }],
     skill: [{ value: 'draw', label: '🃏 抽牌' },{ value: 'energy', label: '⚡ 能量' }],
+    power: [{ value: 'permAtk', label: '💪 力量（攻擊+）' },{ value: 'thorns', label: '🌹 荊棘（反傷）' },{ value: 'blockRegen', label: '🛡️ 護甲再生' }],
 };
 
 function generateSimilarWords(word) {
@@ -45,7 +46,7 @@ function buildCardData(f) {
     if (f.type==='attack') { if(f.extra==='poison') extra.poison=turns; if(f.extra==='hits2') extra.hits=2; if(f.extra==='vulnerable') extra.vulnerable=turns; if(f.extra==='weak') extra.weak=turns; }
     else if (f.type==='defend') { if(f.extra==='draw1') extra.draw=1; if(f.extra==='draw2') extra.draw=2; if(f.extra==='energy1') extra.energy=1; if(f.extra==='energy2') extra.energy=2; }
     else if (f.type==='skill') { if(f.extra==='heal') extra.heal=true; if(f.extra==='draw') extra.draw=true; if(f.extra==='energy') extra.energy=true; }
-    else if (f.type==='power') { if(f.extra==='permAtk') extra.permAtk=true; if(f.extra==='regen') extra.regen=true; if(f.extra==='thorns') extra.thorns=true; }
+    else if (f.type==='power') { if(f.extra==='permAtk') extra.permAtk=true; if(f.extra==='thorns') extra.thorns=true; if(f.extra==='blockRegen') extra.blockRegen=true; }
     
     const tpl = { attack:'攻擊，造成 {v} 點傷害', defend:'防禦，獲得 {v} 點護甲', skill:'效果 {v}', power:'能力 {v}' };
     let baseDesc = `${f.emoji||'⭐'} ${tpl[f.type]}`;
@@ -63,9 +64,9 @@ function buildCardData(f) {
         if (f.extra === 'heal') baseDesc = `${f.emoji||'⭐'} 回復 {v} 血量`;
         if (f.extra === 'draw') baseDesc = `${f.emoji||'⭐'} 抽 {v} 張牌`;
         if (f.extra === 'energy') baseDesc = `${f.emoji||'⭐'} 獲得 {v} 能量`;
-        if (f.extra === 'permAtk') baseDesc = `${f.emoji||'⭐'} 戰鬥中攻擊力 +{v}`;
-        if (f.extra === 'regen') baseDesc = `${f.emoji||'⭐'} 戰鬥中每回合回復 ${Math.max(1, Math.floor(f.value/2))} 血量`;
+        if (f.extra === 'permAtk') baseDesc = `${f.emoji||'⭐'} 本場攻擊力 +{v}`;
         if (f.extra === 'thorns') baseDesc = `${f.emoji||'⭐'} 戰鬥中反彈 {v} 傷害`;
+        if (f.extra === 'blockRegen') baseDesc = `${f.emoji||'⭐'} 每回合獲得 {v} 點護甲`;
     }
 
     return { id: f.en.toLowerCase().trim(), en: f.en.toLowerCase().trim(), zh: f.zh.trim(), difficulty: 1, rarity: f.rarity || 'common',
