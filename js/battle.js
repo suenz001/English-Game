@@ -480,6 +480,7 @@ async function executeCard(card, handIndex, correct) {
             addLog(`  🛡️ 獲得 ${card.value} 點護甲`);
             showFx('🛡️', 'fx-shield');
             if (extra.draw) await drawCards(typeof extra.draw === 'number' ? extra.draw : 1);
+            if (extra.energy) { s.player.energy += extra.energy; addLog(`  ⚡ 獲得 ${extra.energy} 點能量`); }
             if (extra.vulnerable) { s.enemies.filter(e => e.hp > 0).forEach(e => { e.buffs.vulnerable += extra.vulnerable; }); addLog(`  ⚠️ 所有敵人易傷 ${extra.vulnerable} 回合`); }
             if (extra.weak) { s.enemies.filter(e => e.hp > 0).forEach(e => { e.buffs.weak += extra.weak; }); addLog(`  😵‍💫 所有敵人虛弱 ${extra.weak} 回合`); }
             if (extra.reflect) { if (target) { target.hp -= extra.reflect; addLog(`  🔄 反彈 ${extra.reflect} 傷害`); } }
