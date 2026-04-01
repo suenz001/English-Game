@@ -48,35 +48,45 @@ function buildCardData(f) {
     else if (f.type==='skill') { if(f.extra==='heal') extra.heal=true; if(f.extra==='draw') extra.draw=true; if(f.extra==='energy') extra.energy=true; if(f.extra==='energyDraw1') { extra.energy=true; extra.bonusDraw=1; } if(f.extra==='energyDraw2') { extra.energy=true; extra.bonusDraw=2; } }
     else if (f.type==='power') { if(f.extra==='permAtk') extra.permAtk=true; if(f.extra==='thorns') extra.thorns=true; if(f.extra==='blockRegen') extra.blockRegen=true; if(f.extra==='doubleAtk') extra.doubleAtk=true; }
 
-    const tpl = { attack:'攻擊，造成 {v} 點傷害', defend:'防禦，獲得 {v} 點護甲', skill:'效果 {v}', power:'能力 {v}' };
-    let baseDesc = `${f.emoji||'⭐'} ${tpl[f.type]}`;
+    const flavor = (f.flavor || '').trim();
+    const em = f.emoji || '⭐';
+    const fl = (suffix) => flavor ? `${flavor}，${suffix}` : suffix;
+    let baseDesc;
 
-    // 加上額外效果的說明文字（含回合數）
-    if (f.extra) {
-        if (f.extra === 'poison') baseDesc += `，並給予 ${turns} 層毒`;
-        if (f.extra === 'hits2') baseDesc += `，隨機攻擊兩次`;
-        if (f.extra === 'aoe') baseDesc += `（全體攻擊）`;
+    if (f.type === 'attack') {
+        baseDesc = `${em} ${flavor || '攻擊'}，造成 {v} 點傷害`;
+        if (f.extra === 'poison')     baseDesc += `，並給予 ${turns} 層毒`;
+        if (f.extra === 'hits2')      baseDesc += `，隨機攻擊兩次`;
+        if (f.extra === 'aoe')        baseDesc += `（全體攻擊）`;
         if (f.extra === 'vulnerable') baseDesc += `，並給予 ${turns} 回合易傷`;
-        if (f.extra === 'weak') baseDesc += `，並給予 ${turns} 回合虛弱`;
-        if (f.extra === 'draw1') baseDesc += `，並抽 1 張牌`;
-        if (f.extra === 'draw2') baseDesc += `，並抽 2 張牌`;
+        if (f.extra === 'weak')       baseDesc += `，並給予 ${turns} 回合虛弱`;
+    } else if (f.type === 'defend') {
+        baseDesc = `${em} ${flavor || '防禦'}，獲得 {v} 點護甲`;
+        if (f.extra === 'draw1')   baseDesc += `，並抽 1 張牌`;
+        if (f.extra === 'draw2')   baseDesc += `，並抽 2 張牌`;
         if (f.extra === 'energy1') baseDesc += `，並獲得 1 點能量`;
         if (f.extra === 'energy2') baseDesc += `，並獲得 2 點能量`;
         if (f.extra === 'reflect') baseDesc += `，並反彈 {v} 點傷害`;
-        if (f.extra === 'heal') baseDesc = `${f.emoji||'⭐'} 回復 {v} 血量`;
-        if (f.extra === 'draw') baseDesc = `${f.emoji||'⭐'} 抽 {v} 張牌`;
-        if (f.extra === 'energy') baseDesc = `${f.emoji||'⭐'} 獲得 {v} 能量`;
-        if (f.extra === 'energyDraw1') baseDesc = `${f.emoji||'⭐'} 獲得 {v} 能量並抽 1 張牌`;
-        if (f.extra === 'energyDraw2') baseDesc = `${f.emoji||'⭐'} 獲得 {v} 能量並抽 2 張牌`;
-        if (f.extra === 'permAtk') baseDesc = `${f.emoji||'⭐'} 本場攻擊力 +{v}`;
-        if (f.extra === 'thorns') baseDesc = `${f.emoji||'⭐'} 戰鬥中反彈 {v} 傷害`;
-        if (f.extra === 'blockRegen') baseDesc = `${f.emoji||'⭐'} 每回合獲得 {v} 點護甲`;
-        if (f.extra === 'doubleAtk') baseDesc = `${f.emoji||'⭐'} 本場攻擊傷害翻倍`;
+    } else if (f.type === 'skill') {
+        if (f.extra === 'draw')        baseDesc = `${em} ${fl('抽 {v} 張牌')}`;
+        else if (f.extra === 'energy') baseDesc = `${em} ${fl('獲得 {v} 點能量')}`;
+        else if (f.extra === 'energyDraw1') baseDesc = `${em} ${fl('獲得 {v} 點能量並抽 1 張牌')}`;
+        else if (f.extra === 'energyDraw2') baseDesc = `${em} ${fl('獲得 {v} 點能量並抽 2 張牌')}`;
+        else baseDesc = `${em} ${fl('效果 {v}')}`;
+    } else if (f.type === 'power') {
+        if (f.extra === 'permAtk')      baseDesc = `${em} ${fl('本場攻擊力 +{v}')}`;
+        else if (f.extra === 'thorns')     baseDesc = `${em} ${fl('戰鬥中反彈 {v} 傷害')}`;
+        else if (f.extra === 'blockRegen') baseDesc = `${em} ${fl('每回合獲得 {v} 點護甲')}`;
+        else if (f.extra === 'doubleAtk')  baseDesc = `${em} ${fl('本場攻擊傷害翻倍')}`;
+        else baseDesc = `${em} ${fl('能力 {v}')}`;
+    } else {
+        baseDesc = `${em} 效果 {v}`;
     }
 
     return { id: f.en.toLowerCase().trim(), en: f.en.toLowerCase().trim(), zh: f.zh.trim(), difficulty: 1, rarity: f.rarity || 'common',
         type: f.type, cost: parseInt(f.cost), value: parseInt(f.value), emoji: f.emoji || '⭐',
-        desc: baseDesc, extra: Object.keys(extra).length ? extra : undefined };
+        desc: baseDesc, extra: Object.keys(extra).length ? extra : undefined,
+        ...(flavor ? { flavor } : {}) };
 }
 
 // ===== 圖片壓縮 =====
@@ -205,7 +215,8 @@ document.addEventListener('DOMContentLoaded', () => {
             rarity: document.getElementById('word-rarity').value, type: typeSelect.value,
             cost: document.getElementById('word-cost').value, value: document.getElementById('word-value').value,
             emoji: document.getElementById('word-emoji').value, extra: extraSelect.value,
-            debuffTurns: document.getElementById('word-debuff-turns').value
+            debuffTurns: document.getElementById('word-debuff-turns').value,
+            flavor: document.getElementById('word-flavor').value,
         });
         const similarInput = document.getElementById('word-similar').value.trim();
         const similar = similarInput ? similarInput.split(',').map(s => s.trim()).filter(Boolean) : generateSimilarWords(card.en);
@@ -220,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let active = getActiveIds(); if (active) { active.add(card.id); saveActiveIds(active); }
         document.getElementById('word-form').reset();
         document.getElementById('word-emoji').value = '⭐'; document.getElementById('word-value').value = '6';
+        document.getElementById('word-flavor').value = '';
         document.getElementById('edit-id').value = ''; document.getElementById('form-title').textContent = '➕ 新增單字卡';
         document.getElementById('submit-btn').textContent = '✅ 新增卡牌';
         document.getElementById('cancel-edit-btn').classList.add('hidden');
@@ -233,6 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('cancel-edit-btn').addEventListener('click', () => {
         document.getElementById('word-form').reset(); document.getElementById('edit-id').value = '';
+        document.getElementById('word-flavor').value = '';
         document.getElementById('form-title').textContent = '➕ 新增單字卡';
         document.getElementById('submit-btn').textContent = '✅ 新增卡牌';
         document.getElementById('cancel-edit-btn').classList.add('hidden');
@@ -376,25 +389,35 @@ window.editWord = function(id) {
     document.getElementById('word-value').value = w.value;
     document.getElementById('word-emoji').value = w.emoji;
     
+    // 還原描述前綴
+    document.getElementById('word-flavor').value = w.flavor || '';
+
     // 判斷原來的 extra
+    const extraEl = document.getElementById('word-extra');
+    const debuffEl = document.getElementById('word-debuff-turns');
+    extraEl.value = '';
     if (w.extra) {
-        if (w.extra.poison) { document.getElementById('word-extra').value = 'poison'; document.getElementById('word-debuff-turns').value = w.extra.poison; }
-        else if (w.extra.hits) document.getElementById('word-extra').value = 'hits2';
-        else if (w.extra.vulnerable) { document.getElementById('word-extra').value = 'vulnerable'; document.getElementById('word-debuff-turns').value = w.extra.vulnerable; }
-        else if (w.extra.weak) { document.getElementById('word-extra').value = 'weak'; document.getElementById('word-debuff-turns').value = w.extra.weak; }
-        else if (w.extra.draw) {
-            if (w.type === 'skill') document.getElementById('word-extra').value = 'draw';
-            else document.getElementById('word-extra').value = 'draw1'; // for defend
-        }
-        else if (w.extra.energy) document.getElementById('word-extra').value = 'energy';
-        else if (w.extra.heal) document.getElementById('word-extra').value = 'heal';
-        else if (w.extra.permAtk) document.getElementById('word-extra').value = 'permAtk';
-        else if (w.extra.regen) document.getElementById('word-extra').value = 'regen';
-        else if (w.extra.thorns) document.getElementById('word-extra').value = 'thorns';
-    } else {
-        document.getElementById('word-extra').value = '';
+        if (w.extra.poison)      { extraEl.value = 'poison';      debuffEl.value = w.extra.poison; }
+        else if (w.extra.hits)   { extraEl.value = 'hits2'; }
+        else if (w.extra.aoe)    { extraEl.value = 'aoe'; }
+        else if (w.extra.vulnerable) { extraEl.value = 'vulnerable'; debuffEl.value = w.extra.vulnerable; }
+        else if (w.extra.weak)   { extraEl.value = 'weak';         debuffEl.value = w.extra.weak; }
+        else if (w.extra.reflect){ extraEl.value = 'reflect'; }
+        else if (w.type === 'defend' && w.extra.draw === 2)   { extraEl.value = 'draw2'; }
+        else if (w.type === 'defend' && w.extra.draw === 1)   { extraEl.value = 'draw1'; }
+        else if (w.type === 'defend' && w.extra.energy === 2) { extraEl.value = 'energy2'; }
+        else if (w.type === 'defend' && w.extra.energy === 1) { extraEl.value = 'energy1'; }
+        else if (w.extra.energy && w.extra.bonusDraw === 2)   { extraEl.value = 'energyDraw2'; }
+        else if (w.extra.energy && w.extra.bonusDraw === 1)   { extraEl.value = 'energyDraw1'; }
+        else if (w.extra.draw)       { extraEl.value = 'draw'; }
+        else if (w.extra.energy)     { extraEl.value = 'energy'; }
+        else if (w.extra.heal)       { extraEl.value = 'heal'; }
+        else if (w.extra.permAtk)    { extraEl.value = 'permAtk'; }
+        else if (w.extra.thorns)     { extraEl.value = 'thorns'; }
+        else if (w.extra.blockRegen) { extraEl.value = 'blockRegen'; }
+        else if (w.extra.doubleAtk)  { extraEl.value = 'doubleAtk'; }
     }
-    document.getElementById('word-extra').dispatchEvent(new Event('change'));
+    extraEl.dispatchEvent(new Event('change'));
     
     const similar = getCustomSimilar(); 
     document.getElementById('word-similar').value = (similar[id]||[]).join(', ');
