@@ -167,21 +167,24 @@ function generateRandomBalancedDeck(activeIds) {
     const all = getAllWordCards().filter(c => activeIds.has(c.id));
     const attacks = shuffleArray(all.filter(c => c.type === 'attack'));
     const defends = shuffleArray(all.filter(c => c.type === 'defend'));
-    const specials = shuffleArray(all.filter(c => c.type === 'skill' || c.type === 'power'));
-    
+    const skills = shuffleArray(all.filter(c => c.type === 'skill'));
+    const powers = shuffleArray(all.filter(c => c.type === 'power'));
+
     // 如果單卡池不足，回退回硬生生的 STARTER_DECK
     if (attacks.length < 2 || defends.length < 2) return STARTER_DECK.slice(0, 10);
-    
+
     const deck = [];
-    
-    // 試著抽 4攻, 4防, 2特 (如果數量不夠就盡可能拿滿)
+
+    // 試著抽 4攻, 4防, 1技能, 1能力 (如果數量不夠就盡可能拿滿)
     const attackCount = Math.min(attacks.length, 4);
     const defendCount = Math.min(defends.length, 4);
-    const specialCount = Math.min(specials.length, 2);
-    
+    const skillCount = Math.min(skills.length, 1);
+    const powerCount = Math.min(powers.length, 1);
+
     for(let i=0; i<attackCount; i++) deck.push(attacks[i].id);
     for(let i=0; i<defendCount; i++) deck.push(defends[i].id);
-    for(let i=0; i<specialCount; i++) deck.push(specials[i].id);
+    for(let i=0; i<skillCount; i++) deck.push(skills[i].id);
+    for(let i=0; i<powerCount; i++) deck.push(powers[i].id);
     
     // 如果因為某些類型卡不足 10 張，補不重複的卡進去湊滿 10 張
     const missing = 10 - deck.length;

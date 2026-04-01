@@ -445,33 +445,56 @@ async function executeCard(card, handIndex, correct) {
     const vulnMult = target && target.buffs.vulnerable > 0 ? 1.5 : 1;
     switch (card.type) {
         case 'attack': {
-            if (!target || target.hp <= 0) break;
-            
-            // 飛行道具動畫
+            const aliveEnemies = () => s.enemies.filter(e => e.hp > 0);
+            if (aliveEnemies().length === 0) break;
+
             const playerEl = document.querySelector('.player-sprite');
-            const targetEl = document.querySelector(`.enemy-unit[data-enemy-idx="${targetEnemyIdx}"]`);
-            await animateProjectile(playerEl, targetEl, card.emoji);
-            
             sfxAttack();
-            const hits = extra.hits || 1;
-            let totalDmg = 0;
-            for (let i = 0; i < hits; i++) {
-                let dmg = Math.floor((card.value + strength) * multiplier * weakMult * vulnMult);
-                if (target.block > 0) {
-                    const blocked = Math.min(target.block, dmg);
-                    target.block -= blocked;
-                    dmg -= blocked;
+
+            if (extra.aoe) {
+                // 全體攻擊：對所有存活敵人各自計算傷害
+                const firstAliveIdx = s.enemies.findIndex(e => e.hp > 0);
+                const firstEl = document.querySelector(`.enemy-unit[data-enemy-idx="${firstAliveIdx}"]`);
+                await animateProjectile(playerEl, firstEl, card.emoji);
+                let totalDmg = 0;
+                for (const enemy of aliveEnemies()) {
+                    const eVulnMult = enemy.buffs.vulnerable > 0 ? 1.5 : 1;
+                    let dmg = Math.floor((card.value + strength) * multiplier * weakMult * eVulnMult);
+                    if (enemy.block > 0) { const blocked = Math.min(enemy.block, dmg); enemy.block -= blocked; dmg -= blocked; }
+                    enemy.hp -= dmg;
+                    totalDmg += dmg;
+                    addLog(`  💥 對 ${enemy.emoji}${enemy.name} 造成 ${dmg} 點傷害`);
+                    if (enemy.hp <= 0) addLog(`  💀 ${enemy.emoji}${enemy.name} 被擊敗了！`);
                 }
-                target.hp -= dmg;
-                totalDmg += dmg;
-                addLog(`  💥 對 ${target.emoji}${target.name} 造成 ${dmg} 點傷害`);
+                playAttackFx();
+                showFloatingNumber(totalDmg, 'enemy');
+            } else {
+                if (!target || target.hp <= 0) break;
+                const targetEl = document.querySelector(`.enemy-unit[data-enemy-idx="${targetEnemyIdx}"]`);
+                await animateProjectile(playerEl, targetEl, card.emoji);
+
+                const hits = extra.hits || 1;
+                let totalDmg = 0;
+                for (let i = 0; i < hits; i++) {
+                    // 隨機二連擊：每次隨機選擇一個存活的敵人
+                    const alive = aliveEnemies();
+                    const hitTarget = hits > 1 && alive.length > 0
+                        ? alive[Math.floor(Math.random() * alive.length)]
+                        : target;
+                    const eVulnMult = hitTarget.buffs.vulnerable > 0 ? 1.5 : 1;
+                    let dmg = Math.floor((card.value + strength) * multiplier * weakMult * eVulnMult);
+                    if (hitTarget.block > 0) { const blocked = Math.min(hitTarget.block, dmg); hitTarget.block -= blocked; dmg -= blocked; }
+                    hitTarget.hp -= dmg;
+                    totalDmg += dmg;
+                    addLog(`  💥 對 ${hitTarget.emoji}${hitTarget.name} 造成 ${dmg} 點傷害`);
+                    if (hitTarget.hp <= 0) addLog(`  💀 ${hitTarget.emoji}${hitTarget.name} 被擊敗了！`);
+                }
+                if (extra.poison) { target.buffs.poison += extra.poison; addLog(`  🧪 施加 ${extra.poison} 層毒`); }
+                if (extra.vulnerable) { target.buffs.vulnerable += extra.vulnerable; addLog(`  ⚠️ 敵人易傷 ${extra.vulnerable} 回合`); }
+                if (extra.weak) { target.buffs.weak += extra.weak; addLog(`  😵‍💫 敵人虛弱 ${extra.weak} 回合`); }
+                playAttackFx();
+                showFloatingNumber(totalDmg, 'enemy');
             }
-            if (extra.poison) { target.buffs.poison += extra.poison; addLog(`  🧪 施加 ${extra.poison} 層毒`); }
-            if (extra.vulnerable) { target.buffs.vulnerable += extra.vulnerable; addLog(`  ⚠️ 敵人易傷 ${extra.vulnerable} 回合`); }
-            if (extra.weak) { target.buffs.weak += extra.weak; addLog(`  😵‍💫 敵人虛弱 ${extra.weak} 回合`); }
-            playAttackFx();
-            showFloatingNumber(totalDmg, 'enemy');
-            if (target.hp <= 0) addLog(`  💀 ${target.emoji}${target.name} 被擊敗了！`);
             break;
         }
         case 'defend': {
