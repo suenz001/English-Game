@@ -6,14 +6,44 @@ let currentUser = null;
 let cloudData = null;
 const listeners = [];
 
+// 所有需要隔離的 localStorage key（localKey → firebaseKey）
+const ALL_KEYS = [
+    ['vocabSpire_activeCardIds',    'activeCardIds'],
+    ['vocabSpire_playerCollection', 'playerCollection'],
+    ['vocabSpire_playerDeckConfig', 'playerDeckConfig'],
+    ['vocabSpire_customWords',      'customWords'],
+    ['vocabSpire_customSimilar',    'customSimilar'],
+    ['vocabSpire_cardImages',       'cardImages'],
+    ['vocabSpire_savedRun',         'savedRun'],
+];
+
+// 登出時清除所有遊戲相關的 localStorage
+function clearAllLocalData() {
+    ALL_KEYS.forEach(([lk]) => localStorage.removeItem(lk));
+    console.log('🗑️ 已清除本地資料');
+}
+
+// 登入後：把雲端資料寫回 localStorage，確保 admin.js 等讀到正確帳號的資料
+function applyCloudToLocal(data) {
+    ALL_KEYS.forEach(([lk, fk]) => {
+        if (data[fk] !== undefined) {
+            localStorage.setItem(lk, JSON.stringify(data[fk]));
+        } else {
+            localStorage.removeItem(lk); // 雲端沒有的也清掉，避免殘留前帳號資料
+        }
+    });
+}
+
 // 監聽登入狀態
 onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if (user) {
         await loadCloudData();
-        console.log('☁️ 已載入雲端資料');
+        if (cloudData) applyCloudToLocal(cloudData);
+        console.log('☁️ 已載入雲端資料並同步至本地');
     } else {
         cloudData = null;
+        clearAllLocalData(); // 登出時清除本地，防止不同帳號資料混用
     }
     listeners.forEach(fn => fn(user));
 });

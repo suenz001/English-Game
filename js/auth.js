@@ -21,12 +21,7 @@ export function initAuthUI() {
         } else {
             loginBtn.classList.remove('hidden');
             userInfo.classList.add('hidden');
-            if (isFirstCheck) {
-                localStorage.removeItem('vocabSpire_playerCollection');
-                localStorage.removeItem('vocabSpire_playerDeckConfig');
-                localStorage.removeItem('vocabSpire_savedRun');
-                console.log('Guest session detected: Collection wiped.');
-            }
+            // 本地清除由 cloud-save.js 統一處理
         }
         isFirstCheck = false;
     });
