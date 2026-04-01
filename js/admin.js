@@ -2,6 +2,7 @@
 import { WORD_CARDS, STARTER_DECK, RARITY_CONFIG } from './data.js';
 import { getCardArt } from './cardart.js';
 import { generateConfusingWords } from './phonetics.js';
+import { cloudSet } from './cloud-save.js';
 
 const PWD_KEY = 'vocabSpire_adminPwd';
 const WORDS_KEY = 'vocabSpire_customWords';
@@ -12,19 +13,19 @@ const IMAGES_KEY = 'vocabSpire_cardImages';
 function getPassword() { return localStorage.getItem(PWD_KEY) || '1234'; }
 function setPassword(p) { localStorage.setItem(PWD_KEY, p); }
 function getCustomWords() { try { return JSON.parse(localStorage.getItem(WORDS_KEY) || '[]'); } catch { return []; } }
-function saveCustomWords(w) { localStorage.setItem(WORDS_KEY, JSON.stringify(w)); }
+function saveCustomWords(w) { localStorage.setItem(WORDS_KEY, JSON.stringify(w)); cloudSet(WORDS_KEY, 'customWords', w); }
 function getCustomSimilar() { try { return JSON.parse(localStorage.getItem(SIMILAR_KEY) || '{}'); } catch { return {}; } }
-function saveCustomSimilar(s) { localStorage.setItem(SIMILAR_KEY, JSON.stringify(s)); }
-function getAllWords() { 
+function saveCustomSimilar(s) { localStorage.setItem(SIMILAR_KEY, JSON.stringify(s)); cloudSet(SIMILAR_KEY, 'customSimilar', s); }
+function getAllWords() {
     const custom = getCustomWords();
     const customIds = new Set(custom.map(c => c.id));
     const baseCards = WORD_CARDS.filter(c => !customIds.has(c.id));
     return [...custom.reverse(), ...baseCards];
 }
 function getActiveIds() { try { const r = JSON.parse(localStorage.getItem(ACTIVE_KEY)); return r ? new Set(r) : null; } catch { return null; } }
-function saveActiveIds(s) { localStorage.setItem(ACTIVE_KEY, JSON.stringify([...s])); }
+function saveActiveIds(s) { const arr = [...s]; localStorage.setItem(ACTIVE_KEY, JSON.stringify(arr)); cloudSet(ACTIVE_KEY, 'activeCardIds', arr); }
 function getCardImages() { try { return JSON.parse(localStorage.getItem(IMAGES_KEY) || '{}'); } catch { return {}; } }
-function saveCardImages(m) { localStorage.setItem(IMAGES_KEY, JSON.stringify(m)); }
+function saveCardImages(m) { localStorage.setItem(IMAGES_KEY, JSON.stringify(m)); cloudSet(IMAGES_KEY, 'cardImages', m); }
 
 let currentPoolFilter = 'all';
 

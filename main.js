@@ -231,6 +231,7 @@ document.getElementById('de-save-btn').addEventListener('click', () => {
     if (tempDeck.length === 0) { Toast.fire({ icon: 'warning', title: '牌組不能為空！' }); return; }
     import('./js/data.js').then(d => {
         d.savePlayerDeckConfig(tempDeck);
+        cloudSet('vocabSpire_playerDeckConfig', 'playerDeckConfig', tempDeck);
         document.getElementById('deck-editor-modal').classList.add('hidden');
         Toast.fire({ icon: 'success', title: `💾 牌組已儲存！共 ${tempDeck.length} 張` });
     });
@@ -248,6 +249,7 @@ function openDeckEditor() {
         if (deckConfig.length === 0) {
             deckConfig = [];
             d.savePlayerDeckConfig(deckConfig);
+            cloudSet('vocabSpire_playerDeckConfig', 'playerDeckConfig', deckConfig);
         }
 
         // Ensure collection only contains active cards
@@ -259,6 +261,7 @@ function openDeckEditor() {
         if (deckConfig.length > 5) {
             deckConfig = deckConfig.slice(0, 5);
             d.savePlayerDeckConfig(deckConfig);
+            cloudSet('vocabSpire_playerDeckConfig', 'playerDeckConfig', deckConfig);
         }
 
         tempCollection = [...collection];

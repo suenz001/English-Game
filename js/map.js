@@ -334,6 +334,7 @@ function showMysteryCardReward(floor) {
                 gameState.playerDeck.push(cardId);
                 gameState.newCardIds.push(cardId);
                 const coll = getPlayerCollection(); coll.push(cardId); savePlayerCollection(coll);
+                cloudSet('vocabSpire_playerCollection', 'playerCollection', coll);
                 saveRunState();
             }
             showMap();
@@ -443,6 +444,7 @@ function showMerchantEvent(floor) {
             gameState.playerGold -= price;
             gameState.playerDeck.push(el.dataset.id);
             const coll = getPlayerCollection(); coll.push(el.dataset.id); savePlayerCollection(coll);
+            cloudSet('vocabSpire_playerCollection', 'playerCollection', coll);
             el.remove();
             modal.querySelector('.event-desc').textContent = `💰 你的金幣：${gameState.playerGold}`;
             saveRunState();
@@ -569,6 +571,7 @@ function handleBattleResult(result, floor) {
                     gameState.playerDeck.push(cardId);
                     gameState.newCardIds.push(cardId);
                     const coll = getPlayerCollection(); coll.push(cardId); savePlayerCollection(coll);
+                    cloudSet('vocabSpire_playerCollection', 'playerCollection', coll);
                 }
                 showMap();
             });
