@@ -159,12 +159,36 @@ async function drawCards(count) {
 }
 
 function renderHandAnim() {
+    const s = battleState;
     const handEl = document.getElementById('hand-cards');
-    renderHand(); // 會重新產生所有的 innerHTML
+
+    // 重新渲染手牌區
+    handEl.innerHTML = s.player.hand.map((cardId, i) => {
+        const card = getAllWordCards().find(c => c.id === cardId);
+        if (!card) return '';
+        const rarityKey = getCardRarity(card);
+        const rarity = RARITY_CONFIG[rarityKey];
+        const playable = card.cost <= s.player.energy;
+        const typeLabel = { attack: '攻擊', defend: '防禦', skill: '技能', power: '能力' }[card.type];
+        const artSvg = getCardArt(card.id);
+        return `
+            <div class="card ${card.type} ${playable ? 'playable' : 'unplayable'} rarity-${rarityKey}"
+                 data-index="${i}" data-card-type="${card.type}" data-id="${card.id}">
+                <div class="card-cost">${card.cost}</div>
+                <div class="card-art">${artSvg}</div>
+                <div class="card-type-label">${typeLabel}</div>
+                <div class="card-desc">${card.desc.replace('{v}', card.value)}</div>
+                <div class="card-rarity" style="color: ${rarity.color}">${rarity.label}</div>
+            </div>
+        `;
+    }).join('');
+
     // 讓最後一張牌掛上 draw-anim 類別
     if (handEl.lastElementChild) {
         handEl.lastElementChild.classList.add('draw-anim');
     }
+
+    setupCardDrag();
 }
 
 // ===== 出牌 =====
@@ -1058,6 +1082,15 @@ function addLog(msg) {
 function hitAnimation(selector) {
     const el = document.querySelector(selector);
     if (el) { el.classList.add('anim-hit'); setTimeout(() => el.classList.remove('anim-hit'), 400); }
+}
+
+function renderDeckDiscards() {
+    if (!battleState) return;
+    const s = battleState;
+    const deckEl = document.getElementById('deck-count');
+    const discardEl = document.getElementById('discard-count');
+    if (deckEl) deckEl.textContent = `📚 ${s.player.deck.length}`;
+    if (discardEl) discardEl.textContent = `🗑️ ${s.player.discard.length}`;
 }
 
 function shakeElement(selector) {
