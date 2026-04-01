@@ -34,7 +34,7 @@ const EXTRA_OPTIONS = {
     attack: [{ value: '', label: '無' },{ value: 'poison', label: '🧪 中毒' },{ value: 'hits2', label: '⚔️ 隨機二連擊' },{ value: 'aoe', label: '💥 全體攻擊' },{ value: 'vulnerable', label: '⚠️ 易傷(受傷1.5倍)' },{ value: 'weak', label: '😵‍💫 虛弱(傷害0.5倍)' }],
     defend: [{ value: '', label: '無' },{ value: 'draw1', label: '🃏 抽1張牌' },{ value: 'draw2', label: '🃏 抽2張牌' },{ value: 'energy1', label: '⚡ 獲得1點能量' },{ value: 'energy2', label: '⚡ 獲得2點能量' },{ value: 'reflect', label: '🔄 反彈傷害' }],
     skill: [{ value: 'draw', label: '🃏 抽牌' },{ value: 'energy', label: '⚡ 能量' },{ value: 'energyDraw1', label: '⚡🃏 獲得能量並抽1牌' },{ value: 'energyDraw2', label: '⚡🃏 獲得能量並抽2牌' }],
-    power: [{ value: 'permAtk', label: '💪 力量（攻擊+）' },{ value: 'thorns', label: '🌹 荊棘（反傷）' },{ value: 'blockRegen', label: '🛡️ 護甲再生' },{ value: 'doubleAtk', label: '🏆 攻擊翻倍' }],
+    power: [{ value: 'permAtk', label: '💪 力量（攻擊+）' },{ value: 'thorns', label: '🌹 荊棘（反傷）' },{ value: 'blockRegen', label: '🛡️ 護甲再生' }],
 };
 
 function generateSimilarWords(word) {
@@ -47,7 +47,7 @@ function buildCardData(f) {
     if (f.type==='attack') { if(f.extra==='poison') extra.poison=turns; if(f.extra==='hits2') extra.hits=2; if(f.extra==='aoe') extra.aoe=true; if(f.extra==='vulnerable') extra.vulnerable=turns; if(f.extra==='weak') extra.weak=turns; }
     else if (f.type==='defend') { if(f.extra==='draw1') extra.draw=1; if(f.extra==='draw2') extra.draw=2; if(f.extra==='energy1') extra.energy=1; if(f.extra==='energy2') extra.energy=2; if(f.extra==='reflect') extra.reflect=parseInt(f.value)||5; }
     else if (f.type==='skill') { if(f.extra==='heal') extra.heal=true; if(f.extra==='draw') extra.draw=true; if(f.extra==='energy') extra.energy=true; if(f.extra==='energyDraw1') { extra.energy=true; extra.bonusDraw=1; } if(f.extra==='energyDraw2') { extra.energy=true; extra.bonusDraw=2; } }
-    else if (f.type==='power') { if(f.extra==='permAtk') extra.permAtk=true; if(f.extra==='thorns') extra.thorns=true; if(f.extra==='blockRegen') extra.blockRegen=true; if(f.extra==='doubleAtk') extra.doubleAtk=true; }
+    else if (f.type==='power') { if(f.extra==='permAtk') extra.permAtk=true; if(f.extra==='thorns') extra.thorns=true; if(f.extra==='blockRegen') extra.blockRegen=true; }
 
     const flavor = (f.flavor || '').trim();
     const em = f.emoji || '⭐';
@@ -78,7 +78,6 @@ function buildCardData(f) {
         if (f.extra === 'permAtk')      baseDesc = `${em} ${fl('本場攻擊力 +{v}')}`;
         else if (f.extra === 'thorns')     baseDesc = `${em} ${fl('戰鬥中反彈 {v} 傷害')}`;
         else if (f.extra === 'blockRegen') baseDesc = `${em} ${fl('每回合獲得 {v} 點護甲')}`;
-        else if (f.extra === 'doubleAtk')  baseDesc = `${em} ${fl('本場攻擊傷害翻倍')}`;
         else baseDesc = `${em} ${fl('能力 {v}')}`;
     } else {
         baseDesc = `${em} 效果 {v}`;
@@ -464,7 +463,6 @@ window.editWord = function(id) {
         else if (w.extra.permAtk)    { extraEl.value = 'permAtk'; }
         else if (w.extra.thorns)     { extraEl.value = 'thorns'; }
         else if (w.extra.blockRegen) { extraEl.value = 'blockRegen'; }
-        else if (w.extra.doubleAtk)  { extraEl.value = 'doubleAtk'; }
     }
     extraEl.dispatchEvent(new Event('change'));
     

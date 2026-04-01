@@ -69,6 +69,8 @@ body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135d
 .form-img-upload-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .form-upload-btn { padding: 8px 14px; border: 1px solid rgba(155,89,182,0.4); border-radius: 10px; background: rgba(155,89,182,0.15); color: #c9a5e0; cursor: pointer; font-size: 0.85em; font-weight: 700; transition: all 0.2s; display: inline-block; }
 .form-upload-btn:hover { background: rgba(155,89,182,0.3); }
+.img-upload-hint { font-size: 0.72em; color: #7a6b8a; margin-top: 5px; line-height: 1.6; }
+.img-upload-hint strong { color: #a78bba; }
 
 /* ===== Custom Word Form ===== */
 .form-section { background: rgba(255,255,255,0.05); border: 1px solid rgba(155,89,182,0.2); border-radius: 18px; padding: 25px; margin-bottom: 20px; }
