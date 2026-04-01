@@ -120,6 +120,18 @@ body {
     background: rgba(155, 89, 182, 0.2);
 }
 
+.reset-btn {
+    border-color: rgba(231, 76, 60, 0.5);
+    color: #e74c3c;
+    font-size: 0.85em;
+    padding: 7px 22px;
+}
+
+.reset-btn:hover {
+    background: rgba(231, 76, 60, 0.15);
+    border-color: #e74c3c;
+}
+
 /* ===== 地圖畫面（分岔路線）===== */
 #map-screen {
     padding: 20px;

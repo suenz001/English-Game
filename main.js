@@ -220,6 +220,40 @@ document.getElementById('close-deck-btn').addEventListener('click', () => { docu
 // ===== 家長設定 =====
 document.getElementById('admin-btn').addEventListener('click', () => { window.location.href = 'admin.html'; });
 
+// ===== 重製進度與卡片 =====
+document.getElementById('reset-btn').addEventListener('click', () => {
+    Swal.fire({
+        title: '⚠️ 確定要重製嗎？',
+        html: `
+            <div style="text-align:left;font-size:14px;line-height:2;color:#ddd">
+                以下資料將<strong style="color:#e74c3c">永久清除</strong>，無法復原：<br>
+                🗂️ 所有獲得的卡片（卡冊）<br>
+                🎒 攜帶卡組設定<br>
+                🗺️ 目前的關卡進度<br>
+                <br>
+                <span style="color:#a78bba;font-size:0.9em">
+                ✅ 家長新增的自訂卡片、圖片與啟用設定<strong style="color:#2ecc71">不受影響</strong>
+                </span>
+            </div>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '🗑️ 確定清除',
+        cancelButtonText: '取消',
+        background: '#2d1b4e',
+        color: '#fff',
+        confirmButtonColor: '#e74c3c',
+        cancelButtonColor: '#9b59b6',
+    }).then(async r => {
+        if (!r.isConfirmed) return;
+        // 清除玩家資料（保留家長設定）
+        cloudSet('vocabSpire_playerCollection', 'playerCollection', []);
+        cloudSet('vocabSpire_playerDeckConfig', 'playerDeckConfig', []);
+        cloudSet('vocabSpire_savedRun',         'savedRun',         null);
+        updateContinueButton();
+        Toast.fire({ icon: 'success', title: '✅ 已重製！可以重新開始冒險' });
+    });
+});
+
 // ===== 編輯牌組（牌庫+牌組）=====
 let tempDeck = [];
 let tempCollection = [];
