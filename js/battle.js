@@ -45,7 +45,7 @@ export function initBattle(floor, playerDeck, playerHp, playerMaxHp, playerGold,
             energy: GAME_CONSTANTS.ENERGY_PER_TURN, maxEnergy: GAME_CONSTANTS.ENERGY_PER_TURN,
             gold: playerGold,
             deck: shuffleArray([...playerDeck]), hand: [], discard: [],
-            buffs: { strength: 0, regen: 0, thorns: 0, tempStrength: 0, doubleAtk: false, vulnerable: 0, weak: 0, poison: 0, ...playerBuffs },
+            buffs: { strength: 0, regen: 0, thorns: 0, blockRegen: 0, tempStrength: 0, doubleAtk: false, vulnerable: 0, weak: 0, poison: 0, ...playerBuffs },
         },
         enemies,
         turn: 0,
@@ -79,6 +79,12 @@ async function startPlayerTurn() {
         energyEl.classList.remove('energy-gain');
         void energyEl.offsetWidth; // trigger reflow
         energyEl.classList.add('energy-gain');
+    }
+
+    if (s.player.buffs.blockRegen > 0) {
+        s.player.block += s.player.buffs.blockRegen;
+        addLog(`🛡️ 鳳凰羽翼提供了 ${s.player.buffs.blockRegen} 點護甲`);
+        showFx('🛡️', 'fx-shield');
     }
 
     if (s.player.buffs.regen > 0) {
@@ -450,6 +456,7 @@ async function executeCard(card, handIndex, correct) {
             sfxShield();
             if (extra.permAtk) { s.player.buffs.strength += card.value; addLog(`  💪 永久攻擊力 +${card.value}`); }
             if (extra.regen) { s.player.buffs.regen += card.value; addLog(`  🌿 每回合回復 ${card.value} HP`); }
+            if (extra.blockRegen) { s.player.buffs.blockRegen += card.value; addLog(`  🛡️ 每回合獲得 ${card.value} 點護甲`); }
             if (extra.thorns) { s.player.buffs.thorns += card.value; addLog(`  🌹 受擊反彈 ${card.value} 傷害`); }
             if (extra.doubleAtk) { s.player.buffs.doubleAtk = true; addLog(`  🏆 攻擊傷害翻倍！`); }
             showFx('✨', 'fx-heal');
@@ -736,7 +743,7 @@ function handleVictory() {
                 playerHp: s.player.hp, playerMaxHp: s.player.maxHp,
                 goldEarned,
                 deck: [...s.player.deck, ...s.player.hand, ...s.player.discard],
-                buffs: { strength: s.player.buffs.strength, regen: s.player.buffs.regen, thorns: s.player.buffs.thorns },
+                buffs: { strength: s.player.buffs.strength, regen: s.player.buffs.regen, thorns: s.player.buffs.thorns, blockRegen: s.player.buffs.blockRegen },
             });
         }
     }, 600);

@@ -120,7 +120,7 @@ export function confirmHeroAndStartMap(heroEmoji, baseDeck, equippedCards) {
         playerMaxHp: GAME_CONSTANTS.MAX_HP,
         playerGold: 30,
         playerDeck: startingDeck,
-        playerBuffs: { strength: 0, regen: 0, thorns: 0 },
+        playerBuffs: { strength: 0, regen: 0, thorns: 0, blockRegen: 0 },
         newCardIds: [],
         inBattle: false,
         playerEmoji: heroEmoji,
