@@ -995,6 +995,12 @@ function setupCardDrag() {
             } else {
                 document.querySelector('.player-area')?.classList.add('drop-target');
             }
+            
+            // 動態綁定全域拖曳監聽，避免記憶體與效能問題
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchend', onEnd);
         };
         const onMove = (e) => {
             if (!ghost) return;
@@ -1009,6 +1015,12 @@ function setupCardDrag() {
             ghost.remove(); ghost = null;
             card.classList.remove('dragging');
             document.querySelectorAll('.drop-target').forEach(e => e.classList.remove('drop-target'));
+
+            // 拖曳結束後移除全域監聽
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchend', onEnd);
 
             // 檢查放置目標
             const dropEl = document.elementFromPoint(pt.clientX, pt.clientY);
@@ -1029,10 +1041,6 @@ function setupCardDrag() {
 
         card.addEventListener('mousedown', onStart);
         card.addEventListener('touchstart', onStart, { passive: false });
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('touchmove', onMove, { passive: false });
-        document.addEventListener('mouseup', onEnd);
-        document.addEventListener('touchend', onEnd);
 
         // 點擊仍然可以出牌（向下相容）
         card.addEventListener('click', (e) => {
