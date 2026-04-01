@@ -1047,7 +1047,9 @@ body {
 
 .deck-cards {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
 }
 
@@ -1103,6 +1105,7 @@ body {
 }
 
 .de-card-name {
+    font-size: 0.65em;
     font-weight: 700;
     color: #fff;
     overflow: hidden;
@@ -1129,6 +1132,7 @@ body {
 }
 
 .de-card-desc {
+    font-size: 0.68em;
     padding: 3px 4px;
     line-height: 1.2;
     color: #c9a5e0;
@@ -1137,6 +1141,15 @@ body {
 .de-card-zh {
     color: #f1c40f;
     font-weight: 700;
+}
+
+.de-card-footer {
+    font-size: 0.6em;
+    color: #a78bba;
+    text-align: center;
+    padding: 2px 4px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    margin-top: 2px;
 }
 
 .deck-card {
@@ -1559,7 +1572,7 @@ body {
     100% { transform: translate(0, 0) scale(1); opacity: 1; }
 }
 .draw-anim {
-    animation: drawCardAnim 0.3s ease-out forwards;
+    animation: drawCardAnim 0.5s ease-out forwards;
 }
 
 /* �~�P�ʵe */

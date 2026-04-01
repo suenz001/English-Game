@@ -154,7 +154,7 @@ async function drawCards(count) {
         popAudio.volume = 0.2;
         popAudio.play().catch(()=>{});
         
-        await delay(150);
+        await delay(300);
     }
 }
 
@@ -615,7 +615,6 @@ function applyEnemyAttack(enemy, attack, damageReduction) {
         s.player.hp -= dmg;
         addLog(`${enemy.emoji} ${enemy.name} 使用 ${attack.name}，造成 ${dmg} 點傷害`);
         sfxHit();
-        screenShake();
         showFloatingNumber(dmg, 'player');
         // 玩家受擊閃爍
         const pSprite = document.querySelector('.player-sprite');
@@ -1015,29 +1014,32 @@ export function showCardReward(currentDeck, vocabDifficulty, callback) {
 
     const modal = document.getElementById('reward-modal');
     const container = modal.querySelector('.reward-cards');
+    const typeLabels = { attack: '⚔️攻擊', defend: '🛡️防禦', skill: '✨技能', power: '💜能力' };
     container.innerHTML = choices.map(card => {
         const rarityKey = getCardRarity(card);
         const rarity = RARITY_CONFIG[rarityKey];
-        const typeLabel = { attack: '攻擊', defend: '防禦', skill: '技能', power: '能力' }[card.type];
         const artSvg = getCardArt(card.id);
         return `
-            <div class="reward-card rarity-${rarityKey}" data-id="${card.id}" style="border-color: ${rarity.color}">
+            <div class="de-card rarity-${rarityKey}" data-id="${card.id}" style="border-color:${rarity.color}">
+                <div class="de-card-top" style="background:${rarity.color}">
+                    <div class="de-card-cost">${card.cost}</div>
+                    <div class="de-card-name">${card.en}</div>
+                </div>
+                <div class="de-card-art">${artSvg}</div>
+                <div class="de-card-desc">
+                    <span class="de-card-zh">${card.zh}</span><br>
+                    ${card.desc.replace('{v}', card.value)}
+                </div>
+                <div class="de-card-footer">${typeLabels[card.type]} · ${rarity.label}</div>
                 <button class="card-info-btn" data-id="${card.id}">🔍</button>
-                <div class="card-cost">${card.cost}</div>
-                <div class="card-art" style="width:55px;height:38px;margin:4px auto">${artSvg}</div>
-                <div class="card-word">${card.en}</div>
-                <div class="card-zh">${card.zh}</div>
-                <div class="card-type-label">${typeLabel}</div>
-                <div class="card-desc">${card.desc.replace('{v}', card.value)}</div>
-                <div class="card-rarity" style="color: ${rarity.color}">${rarity.label}</div>
             </div>
         `;
     }).join('');
 
     modal.classList.remove('hidden');
 
-    container.querySelectorAll('.reward-card').forEach(el => {
-        // Find trailing info button and bind click correctly without triggering pick
+    let picked = false;
+    container.querySelectorAll('.de-card').forEach(el => {
         const infoBtn = el.querySelector('.card-info-btn');
         if (infoBtn) {
             infoBtn.addEventListener('click', (e) => {
@@ -1047,11 +1049,12 @@ export function showCardReward(currentDeck, vocabDifficulty, callback) {
         }
 
         el.addEventListener('click', async () => {
+            if (picked) return;
+            picked = true;
+            modal.classList.add('hidden');
             const cardId = el.dataset.id;
             const card = WORD_CARDS.find(c => c.id === cardId);
-            // 獲得新卡時念一次單字
             if (card) await speakWord(card.en);
-            modal.classList.add('hidden');
             callback(cardId);
         });
     });
@@ -1238,10 +1241,17 @@ export function showBattleDeckModal(type) {
         const rarityKey = getCardRarity(card);
         const rarity = RARITY_CONFIG[rarityKey];
         const art = getCardArt(card.id);
-        return `<div class="deck-card rarity-${rarityKey}" style="border-color:${rarity.color}" onclick="if(window.showCardDetail) window.showCardDetail('${card.id}')">
-                    <div class="card-art" style="width:40px;height:28px">${art}</div>
-                    <span class="card-name">${card.en} (${card.zh})</span>
-                </div>`;
+        return `<div class="de-card rarity-${rarityKey}" style="border-color:${rarity.color}; cursor:pointer" onclick="if(window.showCardDetail) window.showCardDetail('${card.id}')">
+            <div class="de-card-top" style="background:${rarity.color}">
+                <div class="de-card-cost">${card.cost}</div>
+                <div class="de-card-name">${card.en}</div>
+            </div>
+            <div class="de-card-art">${art}</div>
+            <div class="de-card-desc">
+                <span class="de-card-zh">${card.zh}</span><br>
+                ${card.desc.replace('{v}', card.value)}
+            </div>
+        </div>`;
     }).join('');
     
     modal.classList.remove('hidden');

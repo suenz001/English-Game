@@ -198,9 +198,18 @@ document.getElementById('view-deck-btn').addEventListener('click', () => {
                 const card = allCards.find(c => c.id === id); if (!card) return '';
                 const rarityKey = d.getCardRarity(card);
                 const rarity = d.RARITY_CONFIG[rarityKey];
-                return `<div class="deck-card rarity-${rarityKey}" style="border-color:${rarity.color}" onclick="if(window.showCardDetail) window.showCardDetail('${card.id}')">
-                    <div class="card-art" style="width:40px;height:28px">${a.getCardArt(id)}</div>
-                    <span class="card-name">${card.en} (${card.zh})</span><span class="card-count">x${count}</span></div>`;
+                return `<div class="de-card rarity-${rarityKey}" style="border-color:${rarity.color}; cursor:pointer" onclick="if(window.showCardDetail) window.showCardDetail('${card.id}')">
+                    <div class="de-card-top" style="background:${rarity.color}">
+                        <div class="de-card-cost">${card.cost}</div>
+                        <div class="de-card-name">${card.en}</div>
+                    </div>
+                    <div class="de-card-art">${a.getCardArt(id)}</div>
+                    <div class="de-card-desc">
+                        <span class="de-card-zh">${card.zh}</span><br>
+                        ${card.desc.replace('{v}', card.value)}
+                    </div>
+                    <div class="de-card-footer">x${count}</div>
+                </div>`;
             }).join('');
             deckModal.classList.remove('hidden');
         });
@@ -279,10 +288,17 @@ function renderDeckEditor() {
             const rarityKey = d.getCardRarity(card);
             const rarity = d.RARITY_CONFIG[rarityKey];
             return `<div class="de-card rarity-${rarityKey}" data-id="${id}" data-action="remove" style="border-color:${rarity.color}">
+                <div class="de-card-top" style="background:${rarity.color}">
+                    <div class="de-card-cost">${card.cost}</div>
+                    <div class="de-card-name">${card.en}</div>
+                </div>
+                <div class="de-card-art">${a.getCardArt(id)}</div>
+                <div class="de-card-desc">
+                    <span class="de-card-zh">${card.zh}</span><br>
+                    ${card.desc.replace('{v}', card.value)}
+                </div>
+                <div class="de-card-footer">${typeLabel[card.type]} x${count} · 點擊移除</div>
                 <button class="card-info-btn" data-id="${id}">🔍</button>
-                <div class="de-art">${a.getCardArt(id)}</div>
-                <div class="de-name">${typeLabel[card.type]} x${count}</div>
-                <div class="de-desc">${card.desc.replace('{v}', card.value)}</div>
             </div>`;
         }).join('');
 
@@ -307,10 +323,17 @@ function renderDeckEditor() {
             const rarity = d.RARITY_CONFIG[rarityKey];
             const inDeckClass = avail <= 0 ? 'in-deck' : '';
             return `<div class="de-card ${inDeckClass} rarity-${rarityKey}" data-id="${id}" data-action="add" style="border-color:${rarity.color}">
+                <div class="de-card-top" style="background:${rarity.color}">
+                    <div class="de-card-cost">${card.cost}</div>
+                    <div class="de-card-name">${card.en}</div>
+                </div>
+                <div class="de-card-art">${a.getCardArt(id)}</div>
+                <div class="de-card-desc">
+                    <span class="de-card-zh">${card.zh}</span><br>
+                    ${card.desc.replace('{v}', card.value)}
+                </div>
+                <div class="de-card-footer">${typeLabel[card.type]} ${avail < total ? `${avail}/${total}` : `x${total}`}</div>
                 <button class="card-info-btn" data-id="${id}">🔍</button>
-                <div class="de-art">${a.getCardArt(id)}</div>
-                <div class="de-name">${typeLabel[card.type]} ${avail < total ? `(${avail}/${total})` : `x${total}`}</div>
-                <div class="de-desc">${card.desc.replace('{v}', card.value)}</div>
             </div>`;
         }).join('');
 
@@ -368,20 +391,18 @@ document.getElementById('album-btn').addEventListener('click', () => {
                 const art = a.getCardArt(card.id);
                 // 使用 de-card 樣式
                 return `
-                    <div class="de-card rarity-${rarityKey}">
+                    <div class="de-card rarity-${rarityKey}" style="border-color:${rarity.color}">
                         <div class="de-card-top" style="background:${rarity.color}">
                             <div class="de-card-cost">${card.cost !== undefined ? card.cost : '*'}</div>
                             <div class="de-card-name">${card.en}</div>
-                            <button class="card-info-btn" data-id="${card.id}">🔍</button>
                         </div>
                         <div class="de-card-art">${art}</div>
                         <div class="de-card-desc">
                             <span class="de-card-zh">${card.zh}</span><br>
                             ${card.desc.replace('{v}', card.value || 0)}
                         </div>
-                        <div class="de-card-action" style="font-weight:bold; color:#a78bba; text-align:center;">
-                            收集進度: x${count}
-                        </div>
+                        <div class="de-card-footer">收藏 x${count}</div>
+                        <button class="card-info-btn" data-id="${card.id}">🔍</button>
                     </div>`;
             }).join('');
             
