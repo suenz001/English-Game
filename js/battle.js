@@ -77,7 +77,7 @@ export function initBattle(floor, playerDeck, playerHp, playerMaxHp, playerGold,
             energy: GAME_CONSTANTS.ENERGY_PER_TURN, maxEnergy: GAME_CONSTANTS.ENERGY_PER_TURN,
             gold: playerGold,
             deck: shuffleArray([...playerDeck]), hand: [], discard: [],
-            buffs: { strength: 0, regen: 0, thorns: 0, blockRegen: 0, tempStrength: 0, doubleAtk: false, vulnerable: 0, weak: 0, poison: 0, ...playerBuffs },
+            buffs: { strength: 0, regen: 0, thorns: 0, blockRegen: 0, tempStrength: 0, vulnerable: 0, weak: 0, poison: 0, ...playerBuffs },
         },
         enemies,
         turn: 0,
@@ -103,7 +103,6 @@ async function startPlayerTurn() {
     s.player.energy = s.player.maxEnergy;
     s.player.block = 0;
     s.player.buffs.tempStrength = 0;
-    s.player.buffs.doubleAtk = false;
     
     // 能量增加特效
     const energyEl = document.getElementById('player-energy');
@@ -437,7 +436,6 @@ async function executeCard(card, handIndex, correct) {
     await delay(1200);
 
     const strength = s.player.buffs.strength + s.player.buffs.tempStrength;
-    const multiplier = s.player.buffs.doubleAtk ? 2 : 1;
     const extra = card.extra || {};
     const target = s.enemies[targetEnemyIdx]; // 攻擊目標
 
@@ -459,7 +457,7 @@ async function executeCard(card, handIndex, correct) {
                 let totalDmg = 0;
                 for (const enemy of aliveEnemies()) {
                     const eVulnMult = enemy.buffs.vulnerable > 0 ? 1.5 : 1;
-                    let dmg = Math.floor((card.value + strength) * multiplier * weakMult * eVulnMult);
+                    let dmg = Math.floor((card.value + strength) * weakMult * eVulnMult);
                     if (enemy.block > 0) { const blocked = Math.min(enemy.block, dmg); enemy.block -= blocked; dmg -= blocked; }
                     enemy.hp -= dmg;
                     totalDmg += dmg;
@@ -482,7 +480,7 @@ async function executeCard(card, handIndex, correct) {
                         ? alive[Math.floor(Math.random() * alive.length)]
                         : target;
                     const eVulnMult = hitTarget.buffs.vulnerable > 0 ? 1.5 : 1;
-                    let dmg = Math.floor((card.value + strength) * multiplier * weakMult * eVulnMult);
+                    let dmg = Math.floor((card.value + strength) * weakMult * eVulnMult);
                     if (hitTarget.block > 0) { const blocked = Math.min(hitTarget.block, dmg); hitTarget.block -= blocked; dmg -= blocked; }
                     hitTarget.hp -= dmg;
                     totalDmg += dmg;
@@ -538,7 +536,6 @@ async function executeCard(card, handIndex, correct) {
             if (extra.regen) { s.player.buffs.regen += card.value; addLog(`  🌿 每回合回復 ${card.value} HP`); }
             if (extra.blockRegen) { s.player.buffs.blockRegen += card.value; addLog(`  🛡️ 每回合獲得 ${card.value} 點護甲`); }
             if (extra.thorns) { s.player.buffs.thorns += card.value; addLog(`  🌹 受擊反彈 ${card.value} 傷害`); }
-            if (extra.doubleAtk) { s.player.buffs.doubleAtk = true; addLog(`  🏆 攻擊傷害翻倍！`); }
             showFx('✨', 'fx-heal');
             break;
         }
