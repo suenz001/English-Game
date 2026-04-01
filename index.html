@@ -22,14 +22,37 @@
     <div id="title-screen">
         <div class="game-title">英文勇者塔</div>
         <div class="game-subtitle">⚔️ Vocab Spire ⚔️</div>
-        <button id="start-btn">🎮 開始冒險</button>
-        <button id="continue-btn" class="hidden" style="margin-top: 10px; background: #27ae60; color: white;">▶️ 繼續冒險</button>
+        <button id="start-btn" class="main-action-btn">🎮 開始新的冒險</button>
+        <button id="continue-btn" class="main-action-btn hidden">▶️ 繼續冒險</button>
         <div class="title-buttons">
             <button class="secondary-btn" id="help-btn">📖 說明</button>
             <button class="secondary-btn" id="deck-editor-btn">🎒 攜帶卡片</button>
             <button class="secondary-btn" id="album-btn">📖 我的卡冊</button>
             <button class="secondary-btn" id="admin-btn">⚙️ 家長設定</button>
         </div>
+    </div>
+
+    <!-- ===== 初始配置畫面 ===== -->
+    <div id="hero-selection-screen" class="hidden title-bg">
+        <h2 class="game-title" style="font-size: 2.5rem; margin-bottom: 5px;">✨ 起始準備 ✨</h2>
+        
+        <div class="deck-reveal-area">
+            <h3 style="color:#ddd; margin-bottom:5px;">本次冒險抽出的 10 張隨機卡牌：</h3>
+            <div id="deck-reveal-container" class="deck-cards" style="justify-content:center;"></div>
+            
+            <h3 id="carry-reveal-title" style="color:#ddd; margin-top:15px; margin-bottom:5px;" class="hidden">🎒 你的攜帶卡片：</h3>
+            <div id="carry-reveal-container" class="deck-cards" style="justify-content:center;"></div>
+        </div>
+        
+        <div class="hero-selection-area" style="margin-top:20px;">
+            <h3 style="color:#ddd; margin-bottom:10px;">請選擇你的英雄：</h3>
+            <div class="hero-options" style="display:flex; justify-content:center; gap:20px;">
+                <button class="hero-btn active" data-hero="🦸‍♂️" style="font-size:2rem; padding:10px; border-radius:10px; background:#4a235a; border:3px solid #f1c40f; cursor:pointer; color:white;">🦸‍♂️ 男英雄</button>
+                <button class="hero-btn" data-hero="🦸‍♀️" style="font-size:2rem; padding:10px; border-radius:10px; background:#2d1b4e; border:3px solid transparent; cursor:pointer; color:white;">🦸‍♀️ 女英雄</button>
+            </div>
+        </div>
+        
+        <button id="hero-go-btn" class="main-action-btn hidden" style="margin-top: 30px;">🚀 出發！</button>
     </div>
 
     <!-- ===== 地圖畫面 ===== -->
@@ -50,7 +73,6 @@
         <!-- 頂部資訊 -->
         <div class="battle-top-bar">
             <span id="floor-info">第 1 層</span>
-            <span id="player-energy">⚡ 3/3</span>
             <button id="quit-battle-btn" class="quit-btn">🚪 離開</button>
         </div>
 
@@ -83,6 +105,7 @@
             <div class="deck-discard">
                 <span id="deck-count">📚 10</span>
                 <span id="discard-count">🗑️ 0</span>
+                <span id="player-energy">⚡ 3/3</span>
             </div>
             <button id="end-turn-btn">結束回合</button>
         </div>

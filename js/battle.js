@@ -56,21 +56,30 @@ export function initBattle(floor, playerDeck, playerHp, playerMaxHp, playerGold,
 
     targetEnemyIdx = 0;
     rollAllIntents();
-    startPlayerTurn();
     renderBattle();
+    startPlayerTurn();
 
     const allWords = getAllWordCards().map(c => c.en);
     preloadWords(allWords);
 }
 
 // ===== 回合系統 =====
-function startPlayerTurn() {
+async function startPlayerTurn() {
+    animating = true;
     const s = battleState;
     s.turn++;
     s.player.energy = s.player.maxEnergy;
     s.player.block = 0;
     s.player.buffs.tempStrength = 0;
     s.player.buffs.doubleAtk = false;
+    
+    // 能量增加特效
+    const energyEl = document.getElementById('player-energy');
+    if (energyEl) {
+        energyEl.classList.remove('energy-gain');
+        void energyEl.offsetWidth; // trigger reflow
+        energyEl.classList.add('energy-gain');
+    }
 
     if (s.player.buffs.regen > 0) {
         s.player.hp = Math.min(s.player.maxHp, s.player.hp + s.player.buffs.regen);
@@ -103,19 +112,52 @@ function startPlayerTurn() {
     if (s.player.buffs.vulnerable > 0) { s.player.buffs.vulnerable--; addLog(`⚠️ 易傷剩餘 ${s.player.buffs.vulnerable} 回合`); }
     if (s.player.buffs.weak > 0) { s.player.buffs.weak--; addLog(`😵‍💫 虛弱剩餘 ${s.player.buffs.weak} 回合`); }
 
-    drawCards(GAME_CONSTANTS.HAND_SIZE);
+    await drawCards(GAME_CONSTANTS.HAND_SIZE);
+    
     renderBattle();
+    animating = false;
 }
 
-function drawCards(count) {
+async function drawCards(count) {
     const s = battleState;
     for (let i = 0; i < count; i++) {
         if (s.player.deck.length === 0) {
             if (s.player.discard.length === 0) break;
             s.player.deck = shuffleArray([...s.player.discard]);
             s.player.discard = [];
+            
+            // 洗牌動畫
+            const dcEl = document.getElementById('deck-count');
+            if (dcEl) {
+                dcEl.classList.add('shuffle-active');
+                await delay(500);
+                dcEl.classList.remove('shuffle-active');
+            }
+            renderDeckDiscards();
         }
-        s.player.hand.push(s.player.deck.pop());
+        
+        const drawnCardId = s.player.deck.pop();
+        if (!drawnCardId) break;
+        s.player.hand.push(drawnCardId);
+        
+        // 渲染剛抽上來的那張牌有動畫
+        renderHandAnim();
+        renderDeckDiscards();
+        
+        const popAudio = new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3');
+        popAudio.volume = 0.2;
+        popAudio.play().catch(()=>{});
+        
+        await delay(150);
+    }
+}
+
+function renderHandAnim() {
+    const handEl = document.getElementById('hand-cards');
+    renderHand(); // 會重新產生所有的 innerHTML
+    // 讓最後一張牌掛上 draw-anim 類別
+    if (handEl.lastElementChild) {
+        handEl.lastElementChild.classList.add('draw-anim');
     }
 }
 
@@ -375,7 +417,7 @@ async function executeCard(card, handIndex, correct) {
             s.player.block += card.value;
             addLog(`  🛡️ 獲得 ${card.value} 點護甲`);
             showFx('🛡️', 'fx-shield');
-            if (extra.draw) drawCards(typeof extra.draw === 'number' ? extra.draw : 1);
+            if (extra.draw) await drawCards(typeof extra.draw === 'number' ? extra.draw : 1);
             if (extra.vulnerable) { s.enemies.filter(e => e.hp > 0).forEach(e => { e.buffs.vulnerable += extra.vulnerable; }); addLog(`  ⚠️ 所有敵人易傷 ${extra.vulnerable} 回合`); }
             if (extra.weak) { s.enemies.filter(e => e.hp > 0).forEach(e => { e.buffs.weak += extra.weak; }); addLog(`  😵‍💫 所有敵人虛弱 ${extra.weak} 回合`); }
             if (extra.reflect) { if (target) { target.hp -= extra.reflect; addLog(`  🔄 反彈 ${extra.reflect} 傷害`); } }
@@ -390,9 +432,18 @@ async function executeCard(card, handIndex, correct) {
                 showFx('💚', 'fx-heal');
                 showFloatingNumber(card.value, 'player', 'heal');
             }
-            if (extra.draw) { drawCards(card.value); addLog(`  🃏 抽了 ${card.value} 張牌`); }
-            if (extra.energy) { s.player.energy += card.value; addLog(`  🔋 獲得 ${card.value} 點能量`); }
-            if (extra.bonusDraw) drawCards(extra.bonusDraw);
+            if (extra.draw) { await drawCards(card.value); addLog(`  🃏 抽了 ${card.value} 張牌`); }
+            if (extra.energy) { 
+                s.player.energy += card.value; 
+                addLog(`  🔋 獲得 ${card.value} 點能量`); 
+                const energyEl = document.getElementById('player-energy');
+                if (energyEl) {
+                    energyEl.classList.remove('energy-gain');
+                    void energyEl.offsetWidth;
+                    energyEl.classList.add('energy-gain');
+                }
+            }
+            if (extra.bonusDraw) await drawCards(extra.bonusDraw);
             break;
         }
         case 'power': {

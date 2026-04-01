@@ -88,8 +88,8 @@ function generateMap(totalFloors) {
     return map;
 }
 
-// ===== 開始新遊戲 =====
-export function startNewRun(callback) {
+// ===== 準備新遊戲 =====
+export function prepareNewRun(callback) {
     onGameOver = callback;
 
     let deckConfig = getPlayerDeckConfig();
@@ -103,25 +103,30 @@ export function startNewRun(callback) {
     let equippedCards = deckConfig.filter(id => activeIds.has(id));
     if (equippedCards.length > 5) equippedCards = equippedCards.slice(0, 5);
     
-    // 3. 融合為第一戰的起始卡組
-    const startingDeck = [...baseDeck, ...equippedCards];
+    return { baseDeck, equippedCards };
+}
 
+// ===== 確認英雄並開始產生地圖 =====
+export function confirmHeroAndStartMap(heroEmoji, baseDeck, equippedCards) {
+    const startingDeck = [...baseDeck, ...equippedCards];
     mapData = generateMap(FLOOR_CONFIG.length);
 
     gameState = {
-        currentFloor: -1, // -1 = 還沒開始
+        currentFloor: -1,
         currentNodeId: null,
         visitedNodes: new Set(),
         maxFloor: FLOOR_CONFIG.length,
         playerHp: GAME_CONSTANTS.STARTING_HP,
         playerMaxHp: GAME_CONSTANTS.MAX_HP,
-        playerGold: 30, // 起始金幣給商人用
+        playerGold: 30,
         playerDeck: startingDeck,
         playerBuffs: { strength: 0, regen: 0, thorns: 0 },
         newCardIds: [],
         inBattle: false,
+        playerEmoji: heroEmoji,
     };
     saveRunState();
+    document.querySelector('.player-sprite').textContent = gameState.playerEmoji;
     showMap();
 }
 
@@ -143,7 +148,11 @@ export function loadSavedRun(battleEndCallback) {
     gameState.visitedNodes = new Set(gameState.visitedNodes);
     mapData = save.mapData;
     
+    // 如果舊存檔沒有 emoji，給預設
+    if (!gameState.playerEmoji) gameState.playerEmoji = '🦸‍♂️';
+    
     document.getElementById('title-screen').classList.add('hidden');
+    document.querySelector('.player-sprite').textContent = gameState.playerEmoji;
     
     if (gameState.inBattle) {
         // 如果在戰鬥中退出，強制重新進入該場戰鬥（重置敵人與回合，但血量維持戰前狀態）

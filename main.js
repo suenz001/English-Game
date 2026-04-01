@@ -1,4 +1,4 @@
-import { startNewRun, showMap, loadSavedRun } from './js/map.js';
+import { prepareNewRun, confirmHeroAndStartMap, showMap, loadSavedRun } from './js/map.js';
 import { initAuthUI } from './js/auth.js';
 import { onUserChange, cloudGet, cloudSet } from './js/cloud-save.js';
 
@@ -20,12 +20,17 @@ function updateContinueButton() {
 
 onUserChange(updateContinueButton);
 
+let newRunBaseDeck = [];
+let newRunEquippedCards = [];
+let chosenHero = '🦸‍♂️';
+
 // ===== 開始遊戲 =====
 document.getElementById('start-btn').addEventListener('click', () => {
     cloudSet('vocabSpire_savedRun', 'savedRun', null); // 新的一局先清除存檔
     updateContinueButton();
     titleScreen.classList.add('hidden');
-    startNewRun((result) => {
+    
+    const runData = prepareNewRun((result) => {
         battleScreen.classList.add('hidden');
         mapScreen.classList.add('hidden');
         titleScreen.classList.remove('hidden');
@@ -33,6 +38,99 @@ document.getElementById('start-btn').addEventListener('click', () => {
         else Toast.fire({ icon: 'info', title: `到達第 ${result.floor} 層，再試一次吧！` });
         updateContinueButton();
     });
+    
+    if (!runData) {
+        titleScreen.classList.remove('hidden');
+        return;
+    }
+    
+    newRunBaseDeck = runData.baseDeck;
+    newRunEquippedCards = runData.equippedCards;
+    
+    showHeroSelectionScreen(newRunBaseDeck, newRunEquippedCards);
+});
+
+async function showHeroSelectionScreen(baseDeck, carryDeck) {
+    const heroScreen = document.getElementById('hero-selection-screen');
+    const deckContainer = document.getElementById('deck-reveal-container');
+    const carryContainer = document.getElementById('carry-reveal-container');
+    const carryTitle = document.getElementById('carry-reveal-title');
+    const goBtn = document.getElementById('hero-go-btn');
+    
+    deckContainer.innerHTML = '';
+    carryContainer.innerHTML = '';
+    goBtn.classList.add('hidden');
+    heroScreen.classList.remove('hidden');
+    
+    const [{ getAllWordCards, getCardRarity, RARITY_CONFIG }, { getCardArt }] = await Promise.all([
+        import('./js/data.js'), import('./js/cardart.js')
+    ]);
+    const allCards = getAllWordCards();
+    
+    // 發牌動畫
+    for (let i = 0; i < baseDeck.length; i++) {
+        const c = allCards.find(card => card.id === baseDeck[i]);
+        if (!c) continue;
+        const rarityKey = getCardRarity(c);
+        const art = getCardArt(c.id);
+        
+        const cardEl = document.createElement('div');
+        cardEl.className = `de-card rarity-${rarityKey} deal-anim`;
+        cardEl.innerHTML = `
+            <div class="de-card-top" style="background:${RARITY_CONFIG[rarityKey].color}">
+                <div class="de-card-cost">${c.cost !== undefined ? c.cost : '*'}</div>
+                <div class="de-card-name" style="font-size:0.7em;">${c.en}</div>
+            </div>
+            <div class="de-card-art">${art}</div>
+            <div class="de-card-desc" style="font-size:0.8em;"><span class="de-card-zh">${c.zh}</span><br>${c.desc.replace('{v}', c.value || 0)}</div>
+        `;
+        deckContainer.appendChild(cardEl);
+        
+        const popAudio = new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3');
+        popAudio.volume = 0.2;
+        popAudio.play().catch(()=>{});
+        
+        await new Promise(r => setTimeout(r, 100));
+    }
+    
+    if (carryDeck.length > 0) {
+        carryTitle.classList.remove('hidden');
+        carryDeck.forEach((id, i) => {
+            const c = allCards.find(card => card.id === id);
+            if (!c) return;
+            const rarityKey = getCardRarity(c);
+            const art = getCardArt(c.id);
+            const cardEl = document.createElement('div');
+            cardEl.className = `de-card rarity-${rarityKey} deal-anim`;
+            cardEl.style.animationDelay = `${i * 0.1}s`;
+            cardEl.innerHTML = `
+                <div class="de-card-top" style="background:${RARITY_CONFIG[rarityKey].color}">
+                    <div class="de-card-cost">${c.cost !== undefined ? c.cost : '*'}</div>
+                    <div class="de-card-name" style="font-size:0.7em;">${c.en}</div>
+                </div>
+                <div class="de-card-art">${art}</div>
+                <div class="de-card-desc" style="font-size:0.8em;"><span class="de-card-zh">${c.zh}</span><br>${c.desc.replace('{v}', c.value || 0)}</div>
+            `;
+            carryContainer.appendChild(cardEl);
+        });
+    } else {
+        carryTitle.classList.add('hidden');
+    }
+    
+    setTimeout(() => { goBtn.classList.remove('hidden'); }, 400);
+}
+
+document.querySelectorAll('.hero-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.hero-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        chosenHero = btn.dataset.hero;
+    });
+});
+
+document.getElementById('hero-go-btn').addEventListener('click', () => {
+    document.getElementById('hero-selection-screen').classList.add('hidden');
+    confirmHeroAndStartMap(chosenHero, newRunBaseDeck, newRunEquippedCards);
 });
 
 document.getElementById('continue-btn').addEventListener('click', () => {

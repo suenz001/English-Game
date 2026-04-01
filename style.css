@@ -73,7 +73,7 @@ body {
     margin-bottom: 40px;
 }
 
-#start-btn {
+.main-action-btn {
     font-size: 1.5em;
     padding: 15px 60px;
     border: none;
@@ -85,14 +85,15 @@ body {
     font-family: inherit;
     transition: transform 0.2s, box-shadow 0.2s;
     box-shadow: 0 4px 20px rgba(155, 89, 182, 0.4);
+    margin: 5px;
 }
 
-#start-btn:hover {
+.main-action-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 6px 30px rgba(155, 89, 182, 0.6);
 }
 
-#start-btn:active {
+.main-action-btn:active {
     transform: scale(0.98);
 }
 
@@ -1443,5 +1444,55 @@ body {
     transform: scale(1.15);
     background: #f39c12;
     border-color: #fff;
+}
+
+
+/* ===== Hero Selection & Animations ===== */
+.hero-btn.active {
+    border-color: #f1c40f !important;
+    box-shadow: 0 0 15px #f1c40f;
+    transform: scale(1.1);
+}
+
+@keyframes dealCard {
+    0% { transform: translate(-200px, -200px) scale(0.1) rotate(-180deg); opacity: 0; }
+    60% { transform: translate(10px, 10px) scale(1.1) rotate(10deg); opacity: 1; }
+    100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+}
+
+.deal-anim {
+    animation: dealCard 0.4s ease-out forwards;
+    opacity: 0;
+}
+
+/* 戰鬥抽牌動畫 */
+@keyframes drawCardAnim {
+    0% { transform: translate(-200px, 200px) scale(0.1); opacity: 0; }
+    100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+.draw-anim {
+    animation: drawCardAnim 0.3s ease-out forwards;
+}
+
+/* 洗牌動畫 */
+@keyframes shuffleAnim {
+    0% { transform: translateX(0) rotate(0); }
+    25% { transform: translateX(-50px) rotate(-10deg); }
+    50% { transform: translateX(50px) rotate(10deg); }
+    75% { transform: translateX(-50px) rotate(-10deg); }
+    100% { transform: translateX(0) rotate(0); text-shadow: 0 0 10px #f1c40f; }
+}
+.shuffle-active {
+    animation: shuffleAnim 0.5s ease-in-out;
+}
+
+/* 獲得能量動畫 */
+@keyframes energyGainAnim {
+    0% { transform: scale(1); text-shadow: none; color: white; }
+    50% { transform: scale(1.5); text-shadow: 0 0 15px #f1c40f; color: #f1c40f; }
+    100% { transform: scale(1); text-shadow: none; color: white; }
+}
+.energy-gain {
+    animation: energyGainAnim 0.4s ease-out;
 }
 
