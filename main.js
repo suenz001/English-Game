@@ -432,7 +432,7 @@ document.getElementById('help-btn').addEventListener('click', () => {
             <p><b>📖 我的卡冊</b>：可以在首頁隨時檢視您努力打倒怪物所收集到的所有單字卡戰利品。</p>
             <p><b>📝 戰鬥答題</b>：出牌需通過英文問答（聽音選拼字 + 選中文意思），防禦牌可疊加護甲抵禦怪物攻擊！</p>
             <p><b>⚔️ 攻擊(紅)</b>：造成傷害 | <b>🛡️ 防禦(藍)</b>：獲得護甲</p>
-            <p><b>✨ 技能(綠)</b>：特殊效果 | <b>💜 能力(紫)</b>：整場永久增益</p>
+            <p><b>✨ 技能(綠)</b>：特殊效果 | <b>💜 能力(紫)</b>：本場增益</p>
         </div>`,
         background: '#2d1b4e', color: '#fff', confirmButtonText: '準備出發！', confirmButtonColor: '#9b59b6',
     });

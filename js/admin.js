@@ -32,8 +32,7 @@ let currentPoolFilter = 'all';
 const EXTRA_OPTIONS = {
     attack: [{ value: '', label: '無' },{ value: 'poison', label: '🧪 中毒' },{ value: 'hits2', label: '⚔️ 二連擊' },{ value: 'vulnerable', label: '⚠️ 易傷(受傷1.5倍)' },{ value: 'weak', label: '😵‍💫 虛弱(傷害0.5倍)' }],
     defend: [{ value: '', label: '無' },{ value: 'draw1', label: '🃏 抽1牌' },{ value: 'vulnerable', label: '⚠️ 易傷(受傷1.5倍)' },{ value: 'weak', label: '😵‍💫 虛弱(傷害0.5倍)' }],
-    skill: [{ value: 'heal', label: '💚 回血' },{ value: 'draw', label: '🃏 抽牌' },{ value: 'energy', label: '⚡ 能量' }],
-    power: [{ value: 'permAtk', label: '💪 攻擊+' },{ value: 'regen', label: '🌿 回血' },{ value: 'thorns', label: '🌹 反傷' }],
+    skill: [{ value: 'draw', label: '🃏 抽牌' },{ value: 'energy', label: '⚡ 能量' }],
 };
 
 function generateSimilarWords(word) {
@@ -398,6 +397,33 @@ window.editWord = function(id) {
     document.querySelector('[data-tab="custom"]').classList.add('active');
     document.getElementById('tab-custom').classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.showCardDetail = function(cardId) {
+    const card = getAllWords().find(c => c.id === cardId);
+    if (!card) return;
+    const rc = RARITY_CONFIG[card.rarity || 'common'] || RARITY_CONFIG.common;
+    const typeLabel = { attack: '⚔️ 攻擊', defend: '🛡️ 防禦', skill: '✨ 技能', power: '💜 能力' }[card.type] || card.type;
+    const artHtml = getCardArt(card.id);
+
+    let overlay = document.getElementById('admin-card-detail-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'admin-card-detail-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;';
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; });
+    }
+    overlay.innerHTML = `
+        <div style="background:linear-gradient(135deg,#2d1b4e,#1a0a2e);border:3px solid ${rc.color};border-radius:20px;padding:25px 20px;max-width:280px;width:88%;text-align:center;color:#fff;box-shadow:0 10px 40px ${rc.color}55;">
+            <div style="font-size:1.8em;font-weight:900;color:${rc.color};letter-spacing:1px;">${card.en}</div>
+            <div style="font-size:1.1em;color:#f1c40f;margin:4px 0 10px;">${card.zh}</div>
+            <div style="width:110px;height:75px;margin:0 auto 10px;">${artHtml}</div>
+            <div style="color:#a78bba;font-size:0.85em;margin-bottom:10px;">${typeLabel} | ⚡${card.cost} | <span style="color:${rc.color}">${rc.label}</span></div>
+            <div style="background:rgba(255,255,255,0.06);border-radius:10px;padding:10px;font-size:0.9em;line-height:1.6;">${card.desc.replace('{v}', `<b>${card.value}</b>`)}</div>
+            <button onclick="document.getElementById('admin-card-detail-overlay').style.display='none'" style="margin-top:15px;padding:8px 28px;border:2px solid rgba(255,255,255,0.25);border-radius:15px;background:transparent;color:#fff;cursor:pointer;font-size:0.9em;">關閉</button>
+        </div>`;
+    overlay.style.display = 'flex';
 };
 
 window.deleteWord = function(id) {

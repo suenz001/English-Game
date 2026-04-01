@@ -478,7 +478,7 @@ async function executeCard(card, handIndex, correct) {
         }
         case 'power': {
             sfxShield();
-            if (extra.permAtk) { s.player.buffs.strength += card.value; addLog(`  💪 永久攻擊力 +${card.value}`); }
+            if (extra.permAtk) { s.player.buffs.strength += card.value; addLog(`  💪 本場攻擊力 +${card.value}`); }
             if (extra.regen) { s.player.buffs.regen += card.value; addLog(`  🌿 每回合回復 ${card.value} HP`); }
             if (extra.blockRegen) { s.player.buffs.blockRegen += card.value; addLog(`  🛡️ 每回合獲得 ${card.value} 點護甲`); }
             if (extra.thorns) { s.player.buffs.thorns += card.value; addLog(`  🌹 受擊反彈 ${card.value} 傷害`); }
