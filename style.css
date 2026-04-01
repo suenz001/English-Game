@@ -1407,6 +1407,43 @@ body {
     padding: 2px 6px;
     border-radius: 6px;
     transition: all 0.3s ease;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 3px;
+}
+
+.buff-tag {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 1px 5px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    transition: background 0.15s, transform 0.1s;
+    font-size: 1em;
+    user-select: none;
+}
+.buff-tag:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+.buff-tag:active { transform: scale(0.95); }
+
+#buff-popup {
+    position: fixed;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2d1b4e;
+    border-radius: 14px;
+    padding: 14px 18px;
+    z-index: 9000;
+    text-align: center;
+    min-width: 200px;
+    max-width: 280px;
+    animation: fadeIn 0.2s ease;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.6);
 }
 
 /* ===== 卡牌詳細檢視 Modal ===== */

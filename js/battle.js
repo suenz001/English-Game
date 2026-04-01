@@ -10,6 +10,38 @@ let onBattleEnd = null;
 let animating = false;
 let targetEnemyIdx = 0; // 目前選擇的敵人索引
 
+// ===== Buff 說明表 =====
+const BUFF_INFO = {
+    strength:  { emoji: '💪', name: '力量',    color: '#e74c3c', desc: v => `攻擊力增強，本場每次攻擊額外造成 +${v} 傷害` },
+    regen:     { emoji: '🌿', name: '再生',    color: '#2ecc71', desc: v => `每回合自動回復 ${v} 點血量` },
+    thorns:    { emoji: '🌹', name: '荊棘',    color: '#e74c3c', desc: v => `受到攻擊時自動反彈 ${v} 點傷害給攻擊者` },
+    blockRegen:{ emoji: '🛡️', name: '護甲再生', color: '#3498db', desc: v => `每回合自動獲得 ${v} 點護甲` },
+    vulnerable:{ emoji: '⚠️', name: '易傷',    color: '#e67e22', desc: v => `易傷中！受到的傷害增加 50%，剩餘 ${v} 回合` },
+    weak:      { emoji: '😵‍💫', name: '虛弱',   color: '#9b59b6', desc: v => `虛弱中！攻擊傷害減半，剩餘 ${v} 回合` },
+    poison:    { emoji: '🧪', name: '中毒',    color: '#27ae60', desc: v => `中毒中！每回合受到 ${v} 點傷害（數值逐漸減少）` },
+};
+
+function showBuffPopup(buffKey, value) {
+    const info = BUFF_INFO[buffKey];
+    if (!info) return;
+    const existing = document.getElementById('buff-popup');
+    if (existing) existing.remove();
+    const popup = document.createElement('div');
+    popup.id = 'buff-popup';
+    popup.style.borderColor = info.color;
+    popup.style.borderWidth = '2px';
+    popup.style.borderStyle = 'solid';
+    popup.innerHTML = `
+        <div style="font-size:1.8em">${info.emoji}</div>
+        <div style="color:${info.color};font-weight:700;font-size:1em;margin:4px 0">${info.name}</div>
+        <div style="color:#ddd;font-size:0.85em;line-height:1.5">${info.desc(value)}</div>
+        <div style="color:#777;font-size:0.7em;margin-top:8px">點擊關閉</div>
+    `;
+    document.body.appendChild(popup);
+    const timer = setTimeout(() => { if (popup.parentNode) popup.remove(); }, 3000);
+    popup.addEventListener('click', () => { clearTimeout(timer); popup.remove(); });
+}
+
 // ===== 建立單隻敵人 =====
 function createEnemy(enemyKey, config) {
     const tmpl = ENEMIES[enemyKey];
@@ -802,14 +834,22 @@ export function renderBattle() {
     document.getElementById('player-block').textContent = s.player.block > 0 ? `🛡️${s.player.block}` : '';
     document.getElementById('player-energy').textContent = `⚡ ${s.player.energy}/${s.player.maxEnergy}`;
 
-    let buffText = '';
-    if (s.player.buffs.strength > 0) buffText += `💪${s.player.buffs.strength} `;
-    if (s.player.buffs.regen > 0) buffText += `🌿${s.player.buffs.regen} `;
-    if (s.player.buffs.thorns > 0) buffText += `🌹${s.player.buffs.thorns} `;
-    if (s.player.buffs.vulnerable > 0) buffText += `⚠️易傷${s.player.buffs.vulnerable} `;
-    if (s.player.buffs.weak > 0) buffText += `😵‍💫虛弱${s.player.buffs.weak} `;
-    if (s.player.buffs.poison > 0) buffText += `🧪中毒${s.player.buffs.poison} `;
-    document.getElementById('player-buffs').textContent = buffText;
+    const buffParts = [];
+    if (s.player.buffs.strength > 0) buffParts.push(['strength', s.player.buffs.strength]);
+    if (s.player.buffs.regen > 0) buffParts.push(['regen', s.player.buffs.regen]);
+    if (s.player.buffs.thorns > 0) buffParts.push(['thorns', s.player.buffs.thorns]);
+    if (s.player.buffs.blockRegen > 0) buffParts.push(['blockRegen', s.player.buffs.blockRegen]);
+    if (s.player.buffs.vulnerable > 0) buffParts.push(['vulnerable', s.player.buffs.vulnerable]);
+    if (s.player.buffs.weak > 0) buffParts.push(['weak', s.player.buffs.weak]);
+    if (s.player.buffs.poison > 0) buffParts.push(['poison', s.player.buffs.poison]);
+    const buffsEl = document.getElementById('player-buffs');
+    buffsEl.innerHTML = buffParts.map(([key, val]) => {
+        const info = BUFF_INFO[key];
+        return `<span class="buff-tag" data-buff="${key}" data-val="${val}" style="color:${info.color}">${info.emoji}${val}</span>`;
+    }).join('');
+    buffsEl.querySelectorAll('.buff-tag').forEach(span => {
+        span.addEventListener('click', () => showBuffPopup(span.dataset.buff, parseInt(span.dataset.val)));
+    });
 
     // Enemies - 動態產生多敵人
     const enemyArea = document.querySelector('.enemy-area');
