@@ -79,10 +79,10 @@ async function showHeroSelectionScreen(baseDeck, carryDeck) {
         cardEl.innerHTML = `
             <div class="de-card-top" style="background:${RARITY_CONFIG[rarityKey].color}">
                 <div class="de-card-cost">${c.cost !== undefined ? c.cost : '*'}</div>
-                <div class="de-card-name" style="font-size:0.7em;">${c.en}</div>
+                <div class="de-card-name">${c.en}</div>
             </div>
             <div class="de-card-art">${art}</div>
-            <div class="de-card-desc" style="font-size:0.8em;"><span class="de-card-zh">${c.zh}</span><br>${c.desc.replace('{v}', c.value || 0)}</div>
+            <div class="de-card-desc"><span class="de-card-zh">${c.zh}</span><br>${c.desc.replace('{v}', c.value || 0)}</div>
         `;
         deckContainer.appendChild(cardEl);
         
@@ -106,10 +106,10 @@ async function showHeroSelectionScreen(baseDeck, carryDeck) {
             cardEl.innerHTML = `
                 <div class="de-card-top" style="background:${RARITY_CONFIG[rarityKey].color}">
                     <div class="de-card-cost">${c.cost !== undefined ? c.cost : '*'}</div>
-                    <div class="de-card-name" style="font-size:0.7em;">${c.en}</div>
+                    <div class="de-card-name">${c.en}</div>
                 </div>
                 <div class="de-card-art">${art}</div>
-                <div class="de-card-desc" style="font-size:0.8em;"><span class="de-card-zh">${c.zh}</span><br>${c.desc.replace('{v}', c.value || 0)}</div>
+                <div class="de-card-desc"><span class="de-card-zh">${c.zh}</span><br>${c.desc.replace('{v}', c.value || 0)}</div>
             `;
             carryContainer.appendChild(cardEl);
         });

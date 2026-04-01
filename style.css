@@ -1075,9 +1075,11 @@ body {
     gap: 6px;
 }
 
-/* 英雄選擇畫面的 de-card 縮小版 */
+/* 英雄選擇畫面的 de-card — 用 scale 縮小，保持與戰鬥/其他介面完全相同的比例 */
 .deck-reveal-area .de-card {
-    width: 80px;
+    transform: scale(0.78);
+    transform-origin: top center;
+    margin-bottom: calc((1 - 0.78) * -100px); /* 消除 scale 造成的多餘空白 */
     flex-shrink: 0;
     cursor: default;
 }

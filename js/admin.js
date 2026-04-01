@@ -207,6 +207,39 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    // ===== 表單圖片上傳 =====
+    let pendingImageData = null;   // base64 待儲存
+    let clearImagePending = false; // 等待清除
+
+    function showFormImgPreview(dataUrl) {
+        const box = document.getElementById('form-img-preview');
+        const img = document.getElementById('form-img-preview-img');
+        if (dataUrl) { img.src = dataUrl; box.style.display = 'flex'; }
+        else { box.style.display = 'none'; img.src = ''; }
+    }
+
+    document.getElementById('word-image').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        pendingImageData = await compressImage(file);
+        clearImagePending = false;
+        showFormImgPreview(pendingImageData);
+    });
+
+    document.getElementById('form-clear-img-btn').addEventListener('click', () => {
+        pendingImageData = null;
+        clearImagePending = true;
+        document.getElementById('word-image').value = '';
+        showFormImgPreview(null);
+    });
+
+    function resetFormImage() {
+        pendingImageData = null;
+        clearImagePending = false;
+        document.getElementById('word-image').value = '';
+        showFormImgPreview(null);
+    }
+
     document.getElementById('word-form').addEventListener('submit', e => {
         e.preventDefault();
         const editId = document.getElementById('edit-id').value;
@@ -218,12 +251,20 @@ document.addEventListener('DOMContentLoaded', () => {
             debuffTurns: document.getElementById('word-debuff-turns').value,
             flavor: document.getElementById('word-flavor').value,
         });
+
+        // 處理圖片：儲存或清除
+        const imgs = getCardImages();
+        if (pendingImageData) { imgs[card.id] = pendingImageData; saveCardImages(imgs); }
+        else if (clearImagePending) { delete imgs[card.id]; saveCardImages(imgs); }
+        // 若原本是別的 id 編輯後改了英文字，把舊 id 的圖移到新 id
+        else if (editId && editId !== card.id && imgs[editId]) { imgs[card.id] = imgs[editId]; delete imgs[editId]; saveCardImages(imgs); }
+
         const similarInput = document.getElementById('word-similar').value.trim();
         const similar = similarInput ? similarInput.split(',').map(s => s.trim()).filter(Boolean) : generateSimilarWords(card.en);
         let words = getCustomWords();
         // 允許覆寫：直接移除舊的（無論是本來就在編輯的，還是新的 ID 剛好撞到舊的自訂字）
         words = words.filter(w => w.id !== card.id && w.id !== editId);
-        
+
         words.push(card);
         saveCustomWords(words);
         const s = getCustomSimilar(); s[card.id] = similar; saveCustomSimilar(s);
@@ -232,6 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('word-form').reset();
         document.getElementById('word-emoji').value = '⭐'; document.getElementById('word-value').value = '6';
         document.getElementById('word-flavor').value = '';
+        resetFormImage();
         document.getElementById('edit-id').value = ''; document.getElementById('form-title').textContent = '➕ 新增單字卡';
         document.getElementById('submit-btn').textContent = '✅ 新增卡牌';
         document.getElementById('cancel-edit-btn').classList.add('hidden');
@@ -246,6 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cancel-edit-btn').addEventListener('click', () => {
         document.getElementById('word-form').reset(); document.getElementById('edit-id').value = '';
         document.getElementById('word-flavor').value = '';
+        resetFormImage();
         document.getElementById('form-title').textContent = '➕ 新增單字卡';
         document.getElementById('submit-btn').textContent = '✅ 新增卡牌';
         document.getElementById('cancel-edit-btn').classList.add('hidden');
@@ -391,6 +434,11 @@ window.editWord = function(id) {
     
     // 還原描述前綴
     document.getElementById('word-flavor').value = w.flavor || '';
+
+    // 還原圖片預覽
+    resetFormImage();
+    const existingImg = getCardImages()[id];
+    if (existingImg) showFormImgPreview(existingImg);
 
     // 判斷原來的 extra
     const extraEl = document.getElementById('word-extra');

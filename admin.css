@@ -65,6 +65,11 @@ body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135d
 .clear-img:hover { background: rgba(231,76,60,0.15); }
 .img-indicator { font-size: 0.7em; color: #2ecc71; font-weight: 700; }
 
+/* ===== 表單圖片上傳 ===== */
+.form-img-upload-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.form-upload-btn { padding: 8px 14px; border: 1px solid rgba(155,89,182,0.4); border-radius: 10px; background: rgba(155,89,182,0.15); color: #c9a5e0; cursor: pointer; font-size: 0.85em; font-weight: 700; transition: all 0.2s; display: inline-block; }
+.form-upload-btn:hover { background: rgba(155,89,182,0.3); }
+
 /* ===== Custom Word Form ===== */
 .form-section { background: rgba(255,255,255,0.05); border: 1px solid rgba(155,89,182,0.2); border-radius: 18px; padding: 25px; margin-bottom: 20px; }
 .form-section h2 { font-size: 1.2em; color: #f1c40f; margin-bottom: 18px; }
