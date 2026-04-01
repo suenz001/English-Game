@@ -206,7 +206,7 @@ export const WORD_CARDS = [
     // --- 能力牌 ---
     { id: 'crown', en: 'crown', zh: '皇冠', difficulty: 2, rarity: 'epic',
       type: 'power', cost: 2, value: 2, emoji: '👑',
-      desc: '國王之冠，永久攻擊力 +{v}', extra: { permAtk: true } },
+      desc: '國王之冠，本場攻擊力 +{v}', extra: { permAtk: true } },
     { id: 'heart', en: 'heart', zh: '心', difficulty: 2, rarity: 'epic',
       type: 'power', cost: 2, value: 3, emoji: '❤️',
       desc: '生命之心，每回合回復 {v} HP', extra: { regen: true } },
@@ -311,7 +311,7 @@ export const WORD_CARDS = [
     // --- 能力牌 ---
     { id: 'kingdom', en: 'kingdom', zh: '王國', difficulty: 3, rarity: 'legendary',
       type: 'power', cost: 2, value: 4, emoji: '🏰',
-      desc: '王國之力，永久攻擊力 +{v}', extra: { permAtk: true } },
+      desc: '王國之力，本場攻擊力 +{v}', extra: { permAtk: true } },
     { id: 'phoenix', en: 'phoenix', zh: '鳳凰', difficulty: 3, rarity: 'legendary',
       type: 'power', cost: 2, value: 5, emoji: '🔥',
       desc: '鳳凰羽翼，每回合獲得 {v} 點護甲', extra: { blockRegen: true } },

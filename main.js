@@ -227,10 +227,6 @@ document.getElementById('de-save-btn').addEventListener('click', () => {
     });
 });
 
-document.getElementById('de-reset-btn').addEventListener('click', () => {
-    tempDeck = [...tempCollection];
-    renderDeckEditor();
-});
 
 function openDeckEditor() {
     Promise.all([import('./js/data.js'), import('./js/cardart.js')]).then(([d, a]) => {

@@ -331,7 +331,6 @@ function showMysteryCardReward(floor) {
                 gameState.playerDeck.push(cardId);
                 gameState.newCardIds.push(cardId);
                 const coll = getPlayerCollection(); coll.push(cardId); savePlayerCollection(coll);
-                const dc = getPlayerDeckConfig(); dc.push(cardId); savePlayerDeckConfig(dc);
                 saveRunState();
             }
             showMap();
@@ -344,7 +343,7 @@ function showCardRemoveEvent() {
     const modal = document.getElementById('event-modal');
     const allCards = getAllWordCards();
     modal.querySelector('.event-title').textContent = '🗑️ 淨化祭壇';
-    modal.querySelector('.event-desc').textContent = '選擇一張卡牌從牌組中移除。';
+    modal.querySelector('.event-desc').textContent = '選擇一張卡牌從牌組中永久移除。';
     const bodyEl = modal.querySelector('.event-body');
 
     const counts = {};
@@ -355,20 +354,27 @@ function showCardRemoveEvent() {
         if (!card) return '';
         const typeLabel = { attack: '⚔️', defend: '🛡️', skill: '✨', power: '💜' }[card.type] || '';
         return `<div class="event-card" data-id="${id}">
+            <button class="event-card-info" data-id="${id}" title="查看卡片">🔍</button>
             <span class="event-card-emoji">${card.emoji}</span>
             <span class="event-card-name">${typeLabel} ${card.en} (${card.zh})</span>
             <span class="event-card-count">x${count}</span>
+            <button class="event-card-remove-btn" data-id="${id}">移除</button>
         </div>`;
     }).join('');
 
-    // 跳過按鈕
     bodyEl.innerHTML += '<button class="event-skip-btn">⏭️ 跳過不刪</button>';
-
     modal.classList.remove('hidden');
 
-    bodyEl.querySelectorAll('.event-card').forEach(el => {
-        el.addEventListener('click', () => {
-            const idx = gameState.playerDeck.indexOf(el.dataset.id);
+    bodyEl.querySelectorAll('.event-card-info').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.showCardDetail) window.showCardDetail(btn.dataset.id);
+        });
+    });
+
+    bodyEl.querySelectorAll('.event-card-remove-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = gameState.playerDeck.indexOf(btn.dataset.id);
             if (idx >= 0) { gameState.playerDeck.splice(idx, 1); saveRunState(); }
             modal.classList.add('hidden');
             showMap();
@@ -398,6 +404,7 @@ function showMerchantEvent(floor) {
     shopCards.forEach(card => {
         const price = 15 + card.difficulty * 10;
         html += `<div class="merchant-item card-item" data-id="${card.id}" data-price="${price}">
+            <button class="event-card-info merchant-card-info" data-id="${card.id}" title="查看卡片">🔍</button>
             <span>${card.emoji} ${card.en}</span>
             <span class="merchant-price">💰${price}</span>
         </div>`;
@@ -418,6 +425,13 @@ function showMerchantEvent(floor) {
     html += '</div><button class="event-skip-btn">👋 離開商店</button>';
     bodyEl.innerHTML = html;
     modal.classList.remove('hidden');
+
+    bodyEl.querySelectorAll('.merchant-card-info').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.showCardDetail) window.showCardDetail(btn.dataset.id);
+        });
+    });
 
     bodyEl.querySelectorAll('.card-item').forEach(el => {
         el.addEventListener('click', () => {
@@ -457,7 +471,7 @@ function showMerchantEvent(floor) {
 // --- 祝福事件 ---
 function showBlessingEvent() {
     const blessings = [
-        { text: '💪 力量祝福：永久攻擊力 +1', apply: () => { gameState.playerBuffs.strength += 1; saveRunState(); } },
+        { text: '💪 力量祝福：本場攻擊力 +1', apply: () => { gameState.playerBuffs.strength += 1; saveRunState(); } },
         { text: '❤️ 生命祝福：最大HP +5 並回滿', apply: () => { gameState.playerMaxHp += 5; gameState.playerHp = gameState.playerMaxHp; saveRunState(); } },
         { text: '🌿 再生祝福：每回合回復 1 HP', apply: () => { gameState.playerBuffs.regen += 1; saveRunState(); } },
         { text: '🌹 荊棘祝福：受擊反彈 2 傷害', apply: () => { gameState.playerBuffs.thorns += 2; saveRunState(); } },
@@ -552,7 +566,6 @@ function handleBattleResult(result, floor) {
                     gameState.playerDeck.push(cardId);
                     gameState.newCardIds.push(cardId);
                     const coll = getPlayerCollection(); coll.push(cardId); savePlayerCollection(coll);
-                    const dc = getPlayerDeckConfig(); dc.push(cardId); savePlayerDeckConfig(dc);
                 }
                 showMap();
             });
