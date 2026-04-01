@@ -209,7 +209,7 @@ export const WORD_CARDS = [
       desc: '國王之冠，本場攻擊力 +{v}', extra: { permAtk: true } },
     { id: 'heart', en: 'heart', zh: '心', difficulty: 2, rarity: 'epic',
       type: 'power', cost: 2, value: 3, emoji: '❤️',
-      desc: '生命之心，每回合回復 {v} HP', extra: { regen: true } },
+      desc: '生命之心，每回合獲得 {v} 點護甲', extra: { blockRegen: true } },
     { id: 'rose', en: 'rose', zh: '玫瑰', difficulty: 2, rarity: 'epic',
       type: 'power', cost: 1, value: 3, emoji: '🌹',
       desc: '荊棘玫瑰，受擊反彈 {v} 傷害', extra: { thorns: true } },
