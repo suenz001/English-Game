@@ -96,3 +96,60 @@ export function sfxDefenseQuiz() {
     setTimeout(() => tone(880, 0.08, 'square', 0.06), 120);
     setTimeout(() => tone(1100, 0.12, 'square', 0.06), 240);
 }
+
+// ===== 新增音效 =====
+export function sfxUI() {
+    tone(900, 0.05, 'sine', 0.05);
+}
+
+export function sfxDraw() {
+    sweep(300, 700, 0.08, 'sine', 0.07);
+}
+
+export function sfxShuffle() {
+    for (let i = 0; i < 3; i++) {
+        setTimeout(() => sweep(500, 250, 0.07, 'sine', 0.05), i * 70);
+    }
+}
+
+export function sfxTurnStart() {
+    tone(440, 0.08, 'sine', 0.07);
+    setTimeout(() => tone(550, 0.12, 'sine', 0.06), 90);
+}
+
+export function sfxEndTurn() {
+    sweep(500, 250, 0.15, 'sine', 0.07);
+}
+
+export function sfxPoison() {
+    sweep(150, 350, 0.18, 'sawtooth', 0.08);
+    setTimeout(() => tone(200, 0.15, 'sine', 0.05), 120);
+}
+
+export function sfxPoisonTick() {
+    tone(170, 0.12, 'sawtooth', 0.06);
+    setTimeout(() => tone(140, 0.1, 'sawtooth', 0.05), 80);
+}
+
+export function sfxRegenTick() {
+    tone(660, 0.1, 'sine', 0.05);
+    setTimeout(() => tone(880, 0.12, 'sine', 0.04), 80);
+}
+
+export function sfxDebuff() {
+    sweep(350, 150, 0.2, 'square', 0.07);
+}
+
+export function sfxEnemyBuff() {
+    sweep(200, 450, 0.18, 'sawtooth', 0.08);
+}
+
+export function sfxEnemyDeath() {
+    sweep(350, 60, 0.28, 'sawtooth', 0.11);
+    setTimeout(() => tone(80, 0.2, 'square', 0.09), 120);
+}
+
+export function sfxThorns() {
+    sweep(700, 350, 0.08, 'square', 0.07);
+    setTimeout(() => tone(500, 0.06, 'sine', 0.05), 60);
+}

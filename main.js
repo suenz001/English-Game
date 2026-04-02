@@ -1,6 +1,7 @@
 import { prepareNewRun, confirmHeroAndStartMap, showMap, loadSavedRun } from './js/map.js';
 import { initAuthUI } from './js/auth.js';
 import { onUserChange, cloudGet, cloudSet } from './js/cloud-save.js';
+import { sfxUI, sfxDraw } from './js/sound.js';
 
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, background: '#2d1b4e', color: '#fff' });
 
@@ -26,6 +27,7 @@ let chosenHero = '🦸‍♂️';
 
 // ===== 開始遊戲 =====
 document.getElementById('start-btn').addEventListener('click', () => {
+    sfxUI();
     cloudSet('vocabSpire_savedRun', 'savedRun', null); // 新的一局先清除存檔
     updateContinueButton();
     titleScreen.classList.add('hidden');
@@ -86,9 +88,7 @@ async function showHeroSelectionScreen(baseDeck, carryDeck) {
         `;
         deckContainer.appendChild(cardEl);
         
-        const popAudio = new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3');
-        popAudio.volume = 0.2;
-        popAudio.play().catch(()=>{});
+        sfxDraw();
         
         await new Promise(r => setTimeout(r, 100));
     }
@@ -122,6 +122,7 @@ async function showHeroSelectionScreen(baseDeck, carryDeck) {
 
 document.querySelectorAll('.hero-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
+        sfxUI();
         document.querySelectorAll('.hero-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         chosenHero = btn.dataset.hero;
@@ -129,11 +130,13 @@ document.querySelectorAll('.hero-btn').forEach(btn => {
 });
 
 document.getElementById('hero-go-btn').addEventListener('click', () => {
+    sfxUI();
     document.getElementById('hero-selection-screen').classList.add('hidden');
     confirmHeroAndStartMap(chosenHero, newRunBaseDeck, newRunEquippedCards);
 });
 
 document.getElementById('continue-btn').addEventListener('click', () => {
+    sfxUI();
     titleScreen.classList.add('hidden');
     loadSavedRun((result) => {
         battleScreen.classList.add('hidden');
@@ -147,6 +150,7 @@ document.getElementById('continue-btn').addEventListener('click', () => {
 
 // ===== 地圖返回主畫面 =====
 document.getElementById('map-home-btn').addEventListener('click', () => {
+    sfxUI();
     mapScreen.classList.add('hidden');
     titleScreen.classList.remove('hidden');
     Toast.fire({ icon: 'info', title: '進度已自動儲存' });
@@ -160,6 +164,7 @@ document.getElementById('end-turn-btn').addEventListener('click', () => {
 
 // ===== 離開戰鬥 =====
 document.getElementById('quit-battle-btn').addEventListener('click', () => {
+    sfxUI();
     Swal.fire({
         title: '確定要返回主畫面嗎？',
         text: '戰鬥進度將被保留，下次載入時會從「本場戰鬥一開始」重新開始！',
@@ -186,6 +191,7 @@ document.getElementById('quit-battle-btn').addEventListener('click', () => {
 
 // ===== 查看牌組（地圖上）=====
 document.getElementById('view-deck-btn').addEventListener('click', () => {
+    sfxUI();
     import('./js/map.js').then(({ getGameState }) => {
         const state = getGameState(); if (!state) return;
         Promise.all([import('./js/data.js'), import('./js/cardart.js')]).then(([d, a]) => {
@@ -215,13 +221,14 @@ document.getElementById('view-deck-btn').addEventListener('click', () => {
         });
     });
 });
-document.getElementById('close-deck-btn').addEventListener('click', () => { document.getElementById('deck-modal').classList.add('hidden'); });
+document.getElementById('close-deck-btn').addEventListener('click', () => { sfxUI(); document.getElementById('deck-modal').classList.add('hidden'); });
 
 // ===== 家長設定 =====
-document.getElementById('admin-btn').addEventListener('click', () => { window.location.href = 'admin.html'; });
+document.getElementById('admin-btn').addEventListener('click', () => { sfxUI(); window.location.href = 'admin.html'; });
 
 // ===== 重製進度與卡片 =====
 document.getElementById('reset-btn').addEventListener('click', () => {
+    sfxUI();
     Swal.fire({
         title: '⚠️ 確定要重製嗎？',
         html: `
@@ -258,10 +265,11 @@ document.getElementById('reset-btn').addEventListener('click', () => {
 let tempDeck = [];
 let tempCollection = [];
 
-document.getElementById('deck-editor-btn').addEventListener('click', openDeckEditor);
-document.getElementById('de-close-btn').addEventListener('click', () => { document.getElementById('deck-editor-modal').classList.add('hidden'); });
+document.getElementById('deck-editor-btn').addEventListener('click', () => { sfxUI(); openDeckEditor(); });
+document.getElementById('de-close-btn').addEventListener('click', () => { sfxUI(); document.getElementById('deck-editor-modal').classList.add('hidden'); });
 
 document.getElementById('de-save-btn').addEventListener('click', () => {
+    sfxUI();
     if (tempDeck.length === 0) { Toast.fire({ icon: 'warning', title: '牌組不能為空！' }); return; }
     import('./js/data.js').then(d => {
         d.savePlayerDeckConfig(tempDeck);
@@ -377,12 +385,14 @@ function renderDeckEditor() {
         // Click handlers
         deckContainer.querySelectorAll('.de-card[data-action="remove"]').forEach(el => {
             el.addEventListener('click', () => {
+                sfxUI();
                 const idx = tempDeck.indexOf(el.dataset.id);
                 if (idx >= 0) { tempDeck.splice(idx, 1); renderDeckEditor(); }
             });
         });
         collContainer.querySelectorAll('.de-card[data-action="add"]').forEach(el => {
             el.addEventListener('click', () => {
+                sfxUI();
                 if (tempDeck.length >= 5) {
                     alert('最多只能攜帶 5 張卡片出戰！');
                     return;
@@ -404,6 +414,7 @@ function renderDeckEditor() {
 
 // ===== 顯示卡冊 =====
 document.getElementById('album-btn').addEventListener('click', () => {
+    sfxUI();
     Promise.all([import('./js/data.js'), import('./js/cardart.js')]).then(([d, a]) => {
         const modal = document.getElementById('deck-modal');
         const container = modal.querySelector('.deck-cards');
@@ -460,6 +471,7 @@ document.getElementById('album-btn').addEventListener('click', () => {
 
 // ===== 說明 =====
 document.getElementById('help-btn').addEventListener('click', () => {
+    sfxUI();
     Swal.fire({
         title: '📖 遊戲說明', html: `
         <div style="text-align:left;font-size:14px;line-height:1.8">
@@ -527,7 +539,7 @@ function closeDetail() {
     detailModal.classList.add('hidden');
 }
 
-closeDetailBtn.addEventListener('click', closeDetail);
+closeDetailBtn.addEventListener('click', () => { sfxUI(); closeDetail(); });
 detailModal.addEventListener('click', (e) => {
     // 若點擊在背景黑底而非內容區，則關閉
     if (e.target === detailModal) closeDetail();

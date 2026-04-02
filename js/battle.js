@@ -1,7 +1,7 @@
 import { WORD_CARDS, SIMILAR_WORDS, ENEMIES, FLOOR_CONFIG, GAME_CONSTANTS, RARITY_BY_DIFFICULTY, RARITY_CONFIG, getCardRarity, getCardRarityConfig, getAllWordCards, getAllSimilarWords, getActiveWordCards } from './data.js';
 import { getCardArt } from './cardart.js';
 import { speakWord, speakWordSlowly, preloadWords } from './speech.js';
-import { sfxAttack, sfxHit, sfxShield, sfxHeal, sfxCardPlay, sfxCorrect, sfxWrong, sfxVictory, sfxDefeat, sfxEnemyAttack, sfxDefenseQuiz } from './sound.js';
+import { sfxAttack, sfxHit, sfxShield, sfxHeal, sfxCardPlay, sfxCorrect, sfxWrong, sfxVictory, sfxDefeat, sfxEnemyAttack, sfxDefenseQuiz, sfxDraw, sfxShuffle, sfxTurnStart, sfxEndTurn, sfxPoison, sfxPoisonTick, sfxRegenTick, sfxDebuff, sfxEnemyBuff, sfxEnemyDeath, sfxThorns } from './sound.js';
 import { generateQuizOptions } from './phonetics.js';
 
 let battleState = null;
@@ -100,6 +100,7 @@ async function startPlayerTurn() {
     animating = true;
     const s = battleState;
     s.turn++;
+    sfxTurnStart();
     s.player.energy = s.player.maxEnergy;
     s.player.block = 0;
     s.player.buffs.tempStrength = 0;
@@ -120,10 +121,12 @@ async function startPlayerTurn() {
 
     if (s.player.buffs.regen > 0) {
         s.player.hp = Math.min(s.player.maxHp, s.player.hp + s.player.buffs.regen);
+        sfxRegenTick();
         addLog(`🌿 再生恢復了 ${s.player.buffs.regen} HP`);
     }
     // 玩家中毒 DoT
     if (s.player.buffs.poison > 0) {
+        sfxPoisonTick();
         s.player.hp -= s.player.buffs.poison;
         addLog(`🧪 毒素對你造成 ${s.player.buffs.poison} 點傷害`);
         s.player.buffs.poison = Math.max(0, s.player.buffs.poison - 1);
@@ -133,6 +136,7 @@ async function startPlayerTurn() {
         const e = s.enemies[i];
         if (e.hp <= 0) continue;
         if (e.buffs.poison > 0) {
+            sfxPoisonTick();
             e.hp -= e.buffs.poison;
             addLog(`🧪 毒素對 ${e.emoji}${e.name} 造成 ${e.buffs.poison} 點傷害`);
             e.buffs.poison = Math.max(0, e.buffs.poison - 1);
@@ -162,6 +166,7 @@ async function drawCards(count) {
             if (s.player.discard.length === 0) break;
             s.player.deck = shuffleArray([...s.player.discard]);
             s.player.discard = [];
+            sfxShuffle();
             
             // 洗牌動畫
             const dcEl = document.getElementById('deck-count');
@@ -181,9 +186,7 @@ async function drawCards(count) {
         renderHandAnim();
         renderDeckDiscards();
         
-        const popAudio = new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3');
-        popAudio.volume = 0.2;
-        popAudio.play().catch(()=>{});
+        sfxDraw();
         
         await delay(300);
     }
@@ -462,7 +465,7 @@ async function executeCard(card, handIndex, correct) {
                     enemy.hp -= dmg;
                     totalDmg += dmg;
                     addLog(`  💥 對 ${enemy.emoji}${enemy.name} 造成 ${dmg} 點傷害`);
-                    if (enemy.hp <= 0) addLog(`  💀 ${enemy.emoji}${enemy.name} 被擊敗了！`);
+                    if (enemy.hp <= 0) { sfxEnemyDeath(); addLog(`  💀 ${enemy.emoji}${enemy.name} 被擊敗了！`); }
                 }
                 playAttackFx();
                 showFloatingNumber(totalDmg, 'enemy');
@@ -485,11 +488,11 @@ async function executeCard(card, handIndex, correct) {
                     hitTarget.hp -= dmg;
                     totalDmg += dmg;
                     addLog(`  💥 對 ${hitTarget.emoji}${hitTarget.name} 造成 ${dmg} 點傷害`);
-                    if (hitTarget.hp <= 0) addLog(`  💀 ${hitTarget.emoji}${hitTarget.name} 被擊敗了！`);
+                    if (hitTarget.hp <= 0) { sfxEnemyDeath(); addLog(`  💀 ${hitTarget.emoji}${hitTarget.name} 被擊敗了！`); }
                 }
-                if (extra.poison) { target.buffs.poison += extra.poison; addLog(`  🧪 施加 ${extra.poison} 層毒`); }
-                if (extra.vulnerable) { target.buffs.vulnerable += extra.vulnerable; addLog(`  ⚠️ 敵人易傷 ${extra.vulnerable} 回合`); }
-                if (extra.weak) { target.buffs.weak += extra.weak; addLog(`  😵‍💫 敵人虛弱 ${extra.weak} 回合`); }
+                if (extra.poison) { target.buffs.poison += extra.poison; sfxPoison(); addLog(`  🧪 施加 ${extra.poison} 層毒`); }
+                if (extra.vulnerable) { target.buffs.vulnerable += extra.vulnerable; sfxDebuff(); addLog(`  ⚠️ 敵人易傷 ${extra.vulnerable} 回合`); }
+                if (extra.weak) { target.buffs.weak += extra.weak; sfxDebuff(); addLog(`  😵‍💫 敵人虛弱 ${extra.weak} 回合`); }
                 playAttackFx();
                 showFloatingNumber(totalDmg, 'enemy');
             }
@@ -502,8 +505,8 @@ async function executeCard(card, handIndex, correct) {
             showFx('🛡️', 'fx-shield');
             if (extra.draw) await drawCards(typeof extra.draw === 'number' ? extra.draw : 1);
             if (extra.energy) { s.player.energy += extra.energy; addLog(`  ⚡ 獲得 ${extra.energy} 點能量`); }
-            if (extra.vulnerable) { s.enemies.filter(e => e.hp > 0).forEach(e => { e.buffs.vulnerable += extra.vulnerable; }); addLog(`  ⚠️ 所有敵人易傷 ${extra.vulnerable} 回合`); }
-            if (extra.weak) { s.enemies.filter(e => e.hp > 0).forEach(e => { e.buffs.weak += extra.weak; }); addLog(`  😵‍💫 所有敵人虛弱 ${extra.weak} 回合`); }
+            if (extra.vulnerable) { s.enemies.filter(e => e.hp > 0).forEach(e => { e.buffs.vulnerable += extra.vulnerable; }); sfxDebuff(); addLog(`  ⚠️ 所有敵人易傷 ${extra.vulnerable} 回合`); }
+            if (extra.weak) { s.enemies.filter(e => e.hp > 0).forEach(e => { e.buffs.weak += extra.weak; }); sfxDebuff(); addLog(`  😵‍💫 所有敵人虛弱 ${extra.weak} 回合`); }
             if (extra.reflect) { if (target) { target.hp -= extra.reflect; addLog(`  🔄 反彈 ${extra.reflect} 傷害`); } }
             if (extra.healBonus) { s.player.hp = Math.min(s.player.maxHp, s.player.hp + extra.healBonus); addLog(`  💚 回復 ${extra.healBonus} HP`); }
             break;
@@ -552,6 +555,7 @@ async function executeCard(card, handIndex, correct) {
 // ===== 結束回合 =====
 export function endTurn() {
     if (animating) return;
+    sfxEndTurn();
     const s = battleState;
     s.player.discard.push(...s.player.hand);
     s.player.hand = [];
@@ -580,6 +584,7 @@ async function enemyTurn() {
 
         // 自我增益動畫：力量提升
         if (attack.buffSelf) {
+            sfxEnemyBuff();
             glowElement(enemyEl, 'enemy-buff-glow');
             showStatusFx(enemyEl, '💪', `力量+${attack.buffSelf}`, '#f39c12');
             await delay(500);
@@ -587,6 +592,7 @@ async function enemyTurn() {
 
         // 自我防禦動畫：獲得護甲
         if (attack.block) {
+            sfxEnemyBuff();
             glowElement(enemyEl, 'enemy-block-glow');
             showStatusFx(enemyEl, '🛡️', `護甲+${attack.block}`, '#4dabf7');
             await delay(400);
@@ -594,6 +600,7 @@ async function enemyTurn() {
 
         // 自我回血動畫
         if (attack.heal) {
+            sfxRegenTick();
             glowElement(enemyEl, 'enemy-heal-glow');
             showStatusFx(enemyEl, '💚', `回復${attack.heal}`, '#2ecc71');
             await delay(400);
@@ -601,6 +608,7 @@ async function enemyTurn() {
 
         // 施加易傷動畫 → 目標是玩家
         if (attack.applyVuln) {
+            sfxDebuff();
             glowElement(playerEl, 'player-debuff-flash');
             showStatusFx(playerEl, '⚠️', `易傷${attack.applyVuln}回合`, '#e67e22');
             await delay(500);
@@ -608,6 +616,7 @@ async function enemyTurn() {
 
         // 施加虛弱動畫 → 目標是玩家
         if (attack.applyWeak) {
+            sfxDebuff();
             glowElement(playerEl, 'player-debuff-flash');
             showStatusFx(playerEl, '😵‍💫', `虛弱${attack.applyWeak}回合`, '#be4bdb');
             await delay(500);
@@ -615,6 +624,7 @@ async function enemyTurn() {
 
         // 毒素動畫
         if (attack.poison) {
+            sfxPoison();
             glowElement(playerEl, 'player-debuff-flash');
             showStatusFx(playerEl, '🧪', `中毒+${attack.poison}層`, '#27ae60');
             await delay(400);
@@ -673,6 +683,7 @@ function applyEnemyAttack(enemy, attack, damageReduction) {
         const pSprite = document.querySelector('.player-sprite');
         if (pSprite) { pSprite.classList.remove('anim-hit'); void pSprite.offsetWidth; pSprite.classList.add('anim-hit'); setTimeout(() => pSprite.classList.remove('anim-hit'), 550); }
         if (s.player.buffs.thorns > 0) {
+            sfxThorns();
             enemy.hp -= s.player.buffs.thorns;
             addLog(`  🌹 荊棘反彈 ${s.player.buffs.thorns} 點傷害`);
         }
@@ -704,6 +715,7 @@ function showDefenseQuiz() {
         feedbackEl.className = 'quiz-feedback';
         quizEl.classList.remove('hidden');
         quizEl.classList.add('defense-quiz');
+        sfxDefenseQuiz();
 
         phaseEl.textContent = '⚡ 緊急防禦！答對傷害減半！';
         phaseEl.className = 'quiz-phase defense-phase';
@@ -758,9 +770,11 @@ function showDefenseQuiz() {
 async function finishDefenseQuiz(correct, word, quizEl, speakBtn, resolve) {
     const feedbackEl = document.getElementById('quiz-feedback');
     if (correct) {
+        sfxCorrect();
         feedbackEl.textContent = `✅ 防禦成功！${word.en} = ${word.zh}，傷害減半！`;
         feedbackEl.className = 'quiz-feedback correct';
     } else {
+        sfxWrong();
         feedbackEl.textContent = `❌ ${word.en} = ${word.zh}`;
         feedbackEl.className = 'quiz-feedback wrong';
         await speakWord(word.en);
