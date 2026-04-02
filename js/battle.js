@@ -269,11 +269,12 @@ async function showQuiz(card, handIndex) {
     // 產生 6 個拼字選項（1正確 + 5語音混淆）
     const spellingOptions = generateQuizOptions(card.en, 6);
 
-    questionEl.innerHTML = `<span class="quiz-listen-icon">🔊</span><br>仔細聽，選出正確的單字！`;
+    const isPhrase = card.en.includes(' ');
+    questionEl.innerHTML = `<span class="quiz-listen-icon">🔊</span><br>仔細聽，選出正確的${isPhrase ? '片語' : '單字'}！`;
     optionsEl.innerHTML = spellingOptions.map((opt, i) =>
         `<button class="quiz-option spelling-opt" data-value="${opt}">${opt}</button>`
     ).join('');
-    optionsEl.className = 'quiz-options-grid six-options';
+    optionsEl.className = `quiz-options-grid six-options${isPhrase ? ' phrase-options' : ''}`;
 
     // 播放語音
     speakBtn.classList.remove('hidden');
