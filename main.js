@@ -228,8 +228,8 @@ document.getElementById('close-deck-btn').addEventListener('click', () => { sfxU
 // ===== 家長設定 =====
 document.getElementById('admin-btn').addEventListener('click', () => { sfxUI(); window.location.href = 'admin.html'; });
 
-// ===== 重製進度與卡片 =====
-document.getElementById('reset-btn').addEventListener('click', () => {
+// ===== 重製進度與卡片（共用函數）=====
+function doResetProgress() {
     sfxUI();
     Swal.fire({
         title: '⚠️ 確定要重製嗎？',
@@ -254,14 +254,13 @@ document.getElementById('reset-btn').addEventListener('click', () => {
         cancelButtonColor: '#9b59b6',
     }).then(async r => {
         if (!r.isConfirmed) return;
-        // 清除玩家資料（保留家長設定）
         cloudSet('vocabSpire_playerCollection', 'playerCollection', []);
         cloudSet('vocabSpire_playerDeckConfig', 'playerDeckConfig', []);
         cloudSet('vocabSpire_savedRun',         'savedRun',         null);
         updateContinueButton();
         Toast.fire({ icon: 'success', title: '✅ 已重製！可以重新開始冒險' });
     });
-});
+}
 
 // ===== 編輯牌組（牌庫+牌組）=====
 let tempDeck = [];
@@ -605,10 +604,10 @@ document.getElementById('voice-volume-slider').addEventListener('input', (e) => 
     updateSliderTrack(e.target);
 });
 
-// 設定內的重製進度按鈕（重用已有邏輯）
+// 設定內的重製進度按鈕
 document.getElementById('settings-reset-btn').addEventListener('click', () => {
     document.getElementById('settings-modal').classList.add('hidden');
-    document.getElementById('reset-btn').click();
+    doResetProgress();
 });
 
 // 變更密碼（寄送重設信）

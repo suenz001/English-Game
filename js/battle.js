@@ -397,19 +397,24 @@ async function showMeaningQuiz(card, handIndex, quizEl) {
 
 async function finishQuiz(correct, card, handIndex, quizEl) {
     const feedbackEl = document.getElementById('quiz-feedback');
+    const continueBtn = document.getElementById('quiz-continue-btn');
 
     if (correct) {
         sfxCorrect();
         feedbackEl.textContent = `✅ 完全正確！${card.en} = ${card.zh}`;
         feedbackEl.className = 'quiz-feedback correct';
+        await delay(1200);
     } else {
         sfxWrong();
         feedbackEl.textContent = `❌ 正確答案：${card.en} = ${card.zh}`;
         feedbackEl.className = 'quiz-feedback wrong';
         await speakWord(card.en);
+        await new Promise(resolve => {
+            continueBtn.classList.remove('hidden');
+            continueBtn.onclick = () => { continueBtn.classList.add('hidden'); resolve(); };
+        });
     }
 
-    await delay(1200);
     quizEl.classList.add('hidden');
     document.getElementById('quiz-speak-btn').classList.add('hidden');
     animating = false;
@@ -769,17 +774,22 @@ function showDefenseQuiz() {
 
 async function finishDefenseQuiz(correct, word, quizEl, speakBtn, resolve) {
     const feedbackEl = document.getElementById('quiz-feedback');
+    const continueBtn = document.getElementById('quiz-continue-btn');
     if (correct) {
         sfxCorrect();
         feedbackEl.textContent = `✅ 防禦成功！${word.en} = ${word.zh}，傷害減半！`;
         feedbackEl.className = 'quiz-feedback correct';
+        await delay(1200);
     } else {
         sfxWrong();
         feedbackEl.textContent = `❌ ${word.en} = ${word.zh}`;
         feedbackEl.className = 'quiz-feedback wrong';
         await speakWord(word.en);
+        await new Promise(r => {
+            continueBtn.classList.remove('hidden');
+            continueBtn.onclick = () => { continueBtn.classList.add('hidden'); r(); };
+        });
     }
-    await delay(1200);
     quizEl.classList.add('hidden');
     quizEl.classList.remove('defense-quiz');
     speakBtn.classList.add('hidden');
@@ -1201,6 +1211,7 @@ function showFx(emoji, cssClass) {
 }
 
 function playAttackFx() {
+    sfxHit();
     const targetEl = document.querySelector('.enemy-unit.targeted');
     if (targetEl) {
         const rect = targetEl.getBoundingClientRect();
