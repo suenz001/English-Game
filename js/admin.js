@@ -329,11 +329,41 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cancel-edit-btn').classList.add('hidden');
     });
 
-    // 監聽英文輸入，自動帶出現有屬性
-    document.getElementById('word-en').addEventListener('blur', (e) => {
+    // ===== 自動翻譯 =====
+    async function autoTranslate(word) {
+        const btn = document.getElementById('auto-translate-btn');
+        const zhEl = document.getElementById('word-zh');
+        if (!word) word = document.getElementById('word-en').value.trim();
+        if (!word) return;
+        btn.textContent = '⏳';
+        btn.disabled = true;
+        try {
+            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
+            const data = await res.json();
+            if (data.responseStatus === 200 && data.responseData?.translatedText) {
+                zhEl.value = data.responseData.translatedText;
+            } else {
+                alert('⚠️ 翻譯失敗，請手動輸入');
+            }
+        } catch (e) {
+            console.warn('翻譯失敗', e);
+            alert('⚠️ 無法連線翻譯，請手動輸入');
+        }
+        btn.textContent = '🔤 翻譯';
+        btn.disabled = false;
+    }
+
+    document.getElementById('auto-translate-btn').addEventListener('click', () => autoTranslate());
+
+    // 監聽英文輸入：失焦時自動翻譯（zh 空白時）＋帶出已存在卡牌
+    document.getElementById('word-en').addEventListener('blur', async (e) => {
         const text = e.target.value.toLowerCase().trim();
         if (!text) return;
-        
+
+        // 若 zh 空白，自動翻譯
+        const zhEl = document.getElementById('word-zh');
+        if (!zhEl.value.trim()) await autoTranslate(text);
+
         // 若已經在編輯這個字，就不再重複觸發
         if (document.getElementById('edit-id').value === text) return;
 

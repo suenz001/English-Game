@@ -69,7 +69,13 @@
                         <input type="hidden" id="edit-id" value="">
                         <div class="form-row">
                             <div class="form-group"><label>英文單字 *</label><input type="text" id="word-en" required placeholder="例如: elephant"></div>
-                            <div class="form-group"><label>中文意思 *</label><input type="text" id="word-zh" required placeholder="例如: 大象"></div>
+                            <div class="form-group">
+                                <label>中文意思 *</label>
+                                <div class="zh-input-row">
+                                    <input type="text" id="word-zh" required placeholder="例如: 大象">
+                                    <button type="button" id="auto-translate-btn" class="translate-btn" title="自動翻譯英文單字">🔤 翻譯</button>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">

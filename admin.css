@@ -82,6 +82,13 @@ body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135d
 .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid rgba(155,89,182,0.3); border-radius: 10px; background: rgba(0,0,0,0.3); color: #fff; font-family: inherit; font-size: 0.95em; outline: none; transition: border-color 0.3s; }
 .form-group input:focus, .form-group select:focus { border-color: #9b59b6; }
 .form-group select option { background: #2d1b4e; color: #fff; }
+/* ===== 翻譯按鈕 ===== */
+.zh-input-row { display: flex; gap: 6px; align-items: stretch; }
+.zh-input-row input { flex: 1; min-width: 0; }
+.translate-btn { padding: 0 14px; border: 1px solid rgba(155,89,182,0.4); border-radius: 10px; background: rgba(155,89,182,0.2); color: #c9a5e0; cursor: pointer; font-size: 0.9em; white-space: nowrap; font-family: inherit; font-weight: 700; transition: all 0.2s; flex-shrink: 0; }
+.translate-btn:hover { background: rgba(155,89,182,0.4); border-color: #9b59b6; color: #fff; }
+.translate-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+
 .form-actions { display: flex; gap: 10px; margin-top: 18px; }
 .submit-btn { flex: 1; padding: 14px; border: none; border-radius: 14px; background: linear-gradient(135deg, #2ecc71, #27ae60); color: #fff; font-size: 1.1em; font-weight: 700; cursor: pointer; font-family: inherit; transition: transform 0.2s; }
 .submit-btn:hover { transform: scale(1.03); }
