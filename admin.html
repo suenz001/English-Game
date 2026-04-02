@@ -107,10 +107,26 @@
                             </div>
                         </div>
                         <div id="extra-section" class="form-row">
-                            <div class="form-group"><label id="extra-label">附加效果</label><select id="word-extra"><option value="">無</option></select></div>
+                            <div class="form-group"><label>附加效果</label><select id="word-extra"><option value="">無</option></select></div>
+                            <!-- 攻擊：debuff 持續回合 / 毒層數 -->
                             <div class="form-group" id="debuff-duration-group" style="display:none;">
-                                <label>效果持續 (回合)</label>
-                                <select id="word-debuff-turns"><option value="1">1 回合</option><option value="2" selected>2 回合</option><option value="3">3 回合</option><option value="4">4 回合</option></select>
+                                <label id="debuff-duration-label">持續回合</label>
+                                <select id="word-debuff-turns"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option></select>
+                            </div>
+                            <!-- 防禦 / 技能：抽牌張數 -->
+                            <div class="form-group" id="extra-draw-group" style="display:none;">
+                                <label>抽牌張數</label>
+                                <select id="word-extra-draw"><option value="1">1 張</option><option value="2" selected>2 張</option><option value="3">3 張</option></select>
+                            </div>
+                            <!-- 防禦 / 技能：能量點數 -->
+                            <div class="form-group" id="extra-energy-group" style="display:none;">
+                                <label>能量點數</label>
+                                <select id="word-extra-energy"><option value="1">1 點</option><option value="2" selected>2 點</option><option value="3">3 點</option></select>
+                            </div>
+                            <!-- 防禦：反彈持續回合 -->
+                            <div class="form-group" id="extra-reflect-group" style="display:none;">
+                                <label>反彈持續(回合)</label>
+                                <select id="word-extra-reflect-turns"><option value="1">1 回合</option><option value="2" selected>2 回合</option><option value="3">3 回合</option><option value="99">永久</option></select>
                             </div>
                         </div>
                         <div id="rarity-guide" class="rarity-guide-box"></div>

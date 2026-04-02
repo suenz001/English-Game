@@ -77,7 +77,7 @@ export function initBattle(floor, playerDeck, playerHp, playerMaxHp, playerGold,
             energy: GAME_CONSTANTS.ENERGY_PER_TURN, maxEnergy: GAME_CONSTANTS.ENERGY_PER_TURN,
             gold: playerGold,
             deck: shuffleArray([...playerDeck]), hand: [], discard: [],
-            buffs: { strength: 0, regen: 0, thorns: 0, blockRegen: 0, tempStrength: 0, vulnerable: 0, weak: 0, poison: 0, ...playerBuffs },
+            buffs: { strength: 0, regen: 0, thorns: 0, blockRegen: 0, tempStrength: 0, vulnerable: 0, weak: 0, poison: 0, tempThorns: 0, tempThornsTurns: 0, ...playerBuffs },
         },
         enemies,
         turn: 0,
@@ -104,6 +104,14 @@ async function startPlayerTurn() {
     s.player.energy = s.player.maxEnergy;
     s.player.block = 0;
     s.player.buffs.tempStrength = 0;
+    // 計算臨時反傷回合
+    if (s.player.buffs.tempThornsTurns > 0) {
+        s.player.buffs.tempThornsTurns--;
+        if (s.player.buffs.tempThornsTurns <= 0) {
+            s.player.buffs.tempThorns = 0;
+            s.player.buffs.tempThornsTurns = 0;
+        }
+    }
     
     // 能量增加特效
     const energyEl = document.getElementById('player-energy');
@@ -512,7 +520,13 @@ async function executeCard(card, handIndex, correct) {
             if (extra.energy) { s.player.energy += extra.energy; addLog(`  ⚡ 獲得 ${extra.energy} 點能量`); }
             if (extra.vulnerable) { s.enemies.filter(e => e.hp > 0).forEach(e => { e.buffs.vulnerable += extra.vulnerable; }); sfxDebuff(); addLog(`  ⚠️ 所有敵人易傷 ${extra.vulnerable} 回合`); }
             if (extra.weak) { s.enemies.filter(e => e.hp > 0).forEach(e => { e.buffs.weak += extra.weak; }); sfxDebuff(); addLog(`  😵‍💫 所有敵人虛弱 ${extra.weak} 回合`); }
-            if (extra.reflect) { if (target) { target.hp -= extra.reflect; addLog(`  🔄 反彈 ${extra.reflect} 傷害`); } }
+            if (extra.reflect) {
+                s.player.buffs.tempThorns = (s.player.buffs.tempThorns || 0) + extra.reflect;
+                const reflTurns = extra.reflectTurns || 2;
+                s.player.buffs.tempThornsTurns = (s.player.buffs.tempThornsTurns || 0) + reflTurns;
+                sfxThorns();
+                addLog(`  🔄 獲得 ${extra.reflect} 反傷（持續 ${reflTurns} 回合）`);
+            }
             if (extra.healBonus) { s.player.hp = Math.min(s.player.maxHp, s.player.hp + extra.healBonus); addLog(`  💚 回復 ${extra.healBonus} HP`); }
             break;
         }
@@ -687,10 +701,11 @@ function applyEnemyAttack(enemy, attack, damageReduction) {
         // 玩家受擊閃爍
         const pSprite = document.querySelector('.player-sprite');
         if (pSprite) { pSprite.classList.remove('anim-hit'); void pSprite.offsetWidth; pSprite.classList.add('anim-hit'); setTimeout(() => pSprite.classList.remove('anim-hit'), 550); }
-        if (s.player.buffs.thorns > 0) {
+        const totalThorns = (s.player.buffs.thorns || 0) + (s.player.buffs.tempThorns || 0);
+        if (totalThorns > 0) {
             sfxThorns();
-            enemy.hp -= s.player.buffs.thorns;
-            addLog(`  🌹 荊棘反彈 ${s.player.buffs.thorns} 點傷害`);
+            enemy.hp -= totalThorns;
+            addLog(`  🌹 荊棘反彈 ${totalThorns} 點傷害`);
         }
     }
     if (attack.heal) { enemy.hp = Math.min(enemy.maxHp, enemy.hp + attack.heal); addLog(`  💚 ${enemy.name} 回復 ${attack.heal} HP`); }
@@ -882,7 +897,8 @@ export function renderBattle() {
     const buffParts = [];
     if (s.player.buffs.strength > 0) buffParts.push(['strength', s.player.buffs.strength]);
     if (s.player.buffs.regen > 0) buffParts.push(['regen', s.player.buffs.regen]);
-    if (s.player.buffs.thorns > 0) buffParts.push(['thorns', s.player.buffs.thorns]);
+    const displayThorns = (s.player.buffs.thorns || 0) + (s.player.buffs.tempThorns || 0);
+    if (displayThorns > 0) buffParts.push(['thorns', displayThorns]);
     if (s.player.buffs.blockRegen > 0) buffParts.push(['blockRegen', s.player.buffs.blockRegen]);
     if (s.player.buffs.vulnerable > 0) buffParts.push(['vulnerable', s.player.buffs.vulnerable]);
     if (s.player.buffs.weak > 0) buffParts.push(['weak', s.player.buffs.weak]);
