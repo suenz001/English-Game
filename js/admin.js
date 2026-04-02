@@ -33,8 +33,8 @@ let currentPoolFilter = 'all';
 const EXTRA_OPTIONS = {
     attack: [{ value: '', label: '無' },{ value: 'poison', label: '🧪 中毒（給毒層）' },{ value: 'hits2', label: '⚔️ 隨機二連擊' },{ value: 'aoe', label: '💥 全體攻擊' },{ value: 'vulnerable', label: '⚠️ 易傷（受傷1.5倍）' },{ value: 'weak', label: '😵‍💫 虛弱（傷害0.5倍）' }],
     defend: [{ value: '', label: '無' },{ value: 'draw', label: '🃏 抽牌' },{ value: 'energy', label: '⚡ 獲得能量' },{ value: 'reflect', label: '🔄 反彈傷害' }],
-    skill: [{ value: 'draw', label: '🃏 抽牌（張數=效果數值）' },{ value: 'energy', label: '⚡ 獲得能量（點數=效果數值）' },{ value: 'energyDraw', label: '⚡🃏 能量 + 抽牌（各自設定）' },{ value: 'heal', label: '💚 回血（量=效果數值）' }],
-    power: [{ value: 'permAtk', label: '💪 力量（攻擊力+，量=效果數值）' },{ value: 'regen', label: '💚 生命再生（每回合，量=效果數值）' },{ value: 'thorns', label: '🌹 荊棘（受擊反傷，量=效果數值）' },{ value: 'blockRegen', label: '🛡️ 護甲再生（每回合，量=效果數值）' }],
+    skill: [{ value: 'draw', label: '🃏 抽牌（張數=效果數值）' },{ value: 'energy', label: '⚡ 獲得能量（點數=效果數值）' },{ value: 'energyDraw', label: '⚡🃏 能量 + 抽牌（各自設定）' }],
+    power: [{ value: 'permAtk', label: '💪 力量（攻擊力+，量=效果數值）' },{ value: 'thorns', label: '🌹 荊棘（受擊反傷，量=效果數值）' },{ value: 'blockRegen', label: '🛡️ 護甲再生（每回合，量=效果數值）' }],
 };
 
 function generateSimilarWords(word) {
@@ -62,10 +62,8 @@ function buildCardData(f) {
         if (f.extra === 'draw')       extra.draw  = true;
         if (f.extra === 'energy')     extra.energy = true;
         if (f.extra === 'energyDraw') { extra.energy = true; extra.bonusDraw = extraDraw; }
-        if (f.extra === 'heal')       extra.heal  = true;
     } else if (f.type === 'power') {
         if (f.extra === 'permAtk')    extra.permAtk    = true;
-        if (f.extra === 'regen')      extra.regen      = true;
         if (f.extra === 'thorns')     extra.thorns     = true;
         if (f.extra === 'blockRegen') extra.blockRegen = true;
     }
@@ -92,17 +90,15 @@ function buildCardData(f) {
         if (f.extra === 'energy')  baseDesc += `，並獲得 ${extraEnergy} 點能量`;
         if (f.extra === 'reflect') baseDesc += `，並施加 {v} 反傷（持續 ${extraReflTurns} 回合）`;
     } else if (f.type === 'skill') {
-        if (f.extra === 'draw')           baseDesc = `${em} ${fl('抽 {v} 張牌')}`;
-        else if (f.extra === 'energy')    baseDesc = `${em} ${fl('獲得 {v} 點能量')}`;
+        if (f.extra === 'draw')            baseDesc = `${em} ${fl('抽 {v} 張牌')}`;
+        else if (f.extra === 'energy')     baseDesc = `${em} ${fl('獲得 {v} 點能量')}`;
         else if (f.extra === 'energyDraw') baseDesc = `${em} ${fl(`獲得 ${extraEnergy} 點能量並抽 ${extraDraw} 張牌`)}`;
-        else if (f.extra === 'heal')      baseDesc = `${em} ${fl('回復 {v} HP')}`;
-        else                              baseDesc = `${em} ${fl('效果 {v}')}`;
+        else                               baseDesc = `${em} ${fl('效果 {v}')}`;
     } else if (f.type === 'power') {
         if (f.extra === 'permAtk')         baseDesc = `${em} ${fl('本場攻擊力 +{v}')}`;
-        else if (f.extra === 'regen')      baseDesc = `${em} ${fl('每回合回復 {v} HP')}`;
         else if (f.extra === 'thorns')     baseDesc = `${em} ${fl('戰鬥中反彈 {v} 傷害')}`;
         else if (f.extra === 'blockRegen') baseDesc = `${em} ${fl('每回合獲得 {v} 點護甲')}`;
-        else baseDesc = `${em} ${fl('能力 {v}')}`;
+        else                               baseDesc = `${em} ${fl('能力 {v}')}`;
     } else {
         baseDesc = `${em} 效果 {v}`;
     }
@@ -498,9 +494,7 @@ window.editWord = function(id) {
         else if (w.extra.energy && w.extra.bonusDraw)    { extraEl.value = 'energyDraw'; energyEl2.value = w.value; drawEl.value = w.extra.bonusDraw; }
         else if (w.extra.draw)       { extraEl.value = 'draw'; }
         else if (w.extra.energy)     { extraEl.value = 'energy'; }
-        else if (w.extra.heal)       { extraEl.value = 'heal'; }
         else if (w.extra.permAtk)    { extraEl.value = 'permAtk'; }
-        else if (w.extra.regen)      { extraEl.value = 'regen'; }
         else if (w.extra.thorns)     { extraEl.value = 'thorns'; }
         else if (w.extra.blockRegen) { extraEl.value = 'blockRegen'; }
     }

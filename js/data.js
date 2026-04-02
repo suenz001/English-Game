@@ -268,7 +268,7 @@ export const WORD_CARDS = [
       desc: '島嶼結界，獲得 {v} 點護甲' },
     { id: 'diamond', en: 'diamond', zh: '鑽石', difficulty: 3, rarity: 'legendary',
       type: 'defend', cost: 2, value: 10, emoji: '💎',
-      desc: '鑽石護盾，獲得 {v} 點護甲，並反彈 5 點傷害', extra: { reflect: 5 } },
+      desc: '鑽石護盾，獲得 {v} 點護甲，並施加 5 反傷（持續 3 回合）', extra: { reflect: 5, reflectTurns: 3 } },
     { id: 'bridge', en: 'bridge', zh: '橋', difficulty: 3, rarity: 'epic',
       type: 'defend', cost: 1, value: 8, emoji: '🌉',
       desc: '橋樑防禦，獲得 {v} 點護甲' },
