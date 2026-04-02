@@ -65,10 +65,11 @@ async function loadCloudData() {
 
 async function saveCloudData(key, value) {
     if (!currentUser) return;
+    // 立即更新本地快取，避免 race condition（不等 Firebase 寫入就能讀到新值）
+    if (cloudData) cloudData[key] = value;
     try {
         const ref = doc(db, 'users', currentUser.uid);
         await setDoc(ref, { [key]: value, updatedAt: Date.now() }, { merge: true });
-        if (cloudData) cloudData[key] = value;
     } catch (e) {
         console.warn('⚠️ 儲存雲端資料失敗', e);
     }

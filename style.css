@@ -1740,6 +1740,50 @@ body {
 }
 .settings-close-btn:hover { background: rgba(155,89,182,0.15); color: #c9a3e8; }
 
+/* ===== 事件 Modal 卡牌格線 ===== */
+.event-cards-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    justify-content: center; margin-bottom: 4px;
+}
+.event-selectable-card { transition: transform 0.15s, box-shadow 0.15s; }
+.event-selectable-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+.event-selectable-card.merchant-cant-afford { opacity: 0.45; filter: grayscale(0.5); }
+
+/* 移除按鈕（淨化祭壇） */
+.event-remove-confirm-btn {
+    width: 100%; margin-top: 4px; padding: 6px;
+    border: 1px solid rgba(231,76,60,0.5); border-radius: 8px;
+    background: rgba(231,76,60,0.12); color: #e07a6a;
+    font-family: inherit; font-size: 0.78em; cursor: pointer;
+    transition: background 0.2s;
+}
+.event-remove-confirm-btn:hover { background: rgba(231,76,60,0.3); color: #fff; }
+
+/* 購買按鈕（商人） */
+.merchant-buy-btn {
+    width: 100%; margin-top: 4px; padding: 6px;
+    border: 1px solid rgba(241,196,15,0.5); border-radius: 8px;
+    background: rgba(241,196,15,0.1); color: #f1c40f;
+    font-family: inherit; font-size: 0.78em; cursor: pointer;
+    transition: background 0.2s;
+}
+.merchant-buy-btn:hover:not(:disabled) { background: rgba(241,196,15,0.25); color: #fff; }
+.merchant-buy-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 商人服務列 */
+.merchant-services {
+    display: flex; flex-direction: column; gap: 6px; margin-top: 10px;
+}
+.merchant-service-btn {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid rgba(155,89,182,0.4); border-radius: 12px;
+    background: rgba(155,89,182,0.1); color: #c9a3e8;
+    font-family: inherit; font-size: 0.88em; cursor: pointer;
+    transition: background 0.2s; text-align: center;
+}
+.merchant-service-btn:hover:not(:disabled) { background: rgba(155,89,182,0.25); }
+.merchant-service-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
 /* ===== 答題繼續按鈕 ===== */
 .quiz-continue-btn {
     display: block; width: 100%; margin-top: 14px;

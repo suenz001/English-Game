@@ -1,4 +1,4 @@
-import { FLOOR_CONFIG, GAME_CONSTANTS, STARTER_DECK, ENEMIES, WORD_CARDS, getAllWordCards, getActiveWordCards, getPlayerCollection, savePlayerCollection, getPlayerDeckConfig, savePlayerDeckConfig } from './data.js';
+import { FLOOR_CONFIG, GAME_CONSTANTS, STARTER_DECK, ENEMIES, WORD_CARDS, getAllWordCards, getActiveWordCards, getPlayerCollection, savePlayerCollection, getPlayerDeckConfig, savePlayerDeckConfig, getCardRarity, RARITY_CONFIG } from './data.js';
 import { initBattle, showCardReward } from './battle.js';
 import { getCardArt } from './cardart.js';
 import { cloudGet, cloudSet } from './cloud-save.js';
@@ -347,37 +347,45 @@ function showCardRemoveEvent() {
     const modal = document.getElementById('event-modal');
     const allCards = getAllWordCards();
     modal.querySelector('.event-title').textContent = '🗑️ 淨化祭壇';
-    modal.querySelector('.event-desc').textContent = '選擇一張卡牌從牌組中永久移除。';
+    modal.querySelector('.event-desc').textContent = '點擊卡牌查看詳情，點「移除」才會從牌組中永久刪除。';
     const bodyEl = modal.querySelector('.event-body');
 
     const counts = {};
     gameState.playerDeck.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
 
-    bodyEl.innerHTML = Object.entries(counts).map(([id, count]) => {
+    bodyEl.innerHTML = '<div class="event-cards-grid">' + Object.entries(counts).map(([id, count]) => {
         const card = allCards.find(c => c.id === id);
         if (!card) return '';
-        const typeLabel = { attack: '⚔️', defend: '🛡️', skill: '✨', power: '💜' }[card.type] || '';
-        return `<div class="event-card" data-id="${id}">
-            <button class="event-card-info" data-id="${id}" title="查看卡片">🔍</button>
-            <span class="event-card-emoji">${card.emoji}</span>
-            <span class="event-card-name">${typeLabel} ${card.en} (${card.zh})</span>
-            <span class="event-card-count">x${count}</span>
-            <button class="event-card-remove-btn" data-id="${id}">移除</button>
+        const rarityKey = getCardRarity(card);
+        const rarity = RARITY_CONFIG[rarityKey];
+        const art = getCardArt(id);
+        return `<div class="de-card rarity-${rarityKey} event-selectable-card" data-id="${id}" style="border-color:${rarity.color}; cursor:pointer">
+            <div class="de-card-top" style="background:${rarity.color}">
+                <div class="de-card-cost">${card.cost}</div>
+                <div class="de-card-name">${card.en}</div>
+            </div>
+            <div class="de-card-art">${art}</div>
+            <div class="de-card-desc"><span class="de-card-zh">${card.zh}</span><br>${card.desc.replace('{v}', card.value || 0)}</div>
+            <div class="de-card-footer">x${count}</div>
+            <button class="event-remove-confirm-btn" data-id="${id}">🗑️ 移除</button>
         </div>`;
-    }).join('');
+    }).join('') + '</div>';
 
-    bodyEl.innerHTML += '<button class="event-skip-btn">⏭️ 跳過不刪</button>';
+    bodyEl.innerHTML += '<button class="event-skip-btn" style="margin-top:12px">⏭️ 跳過不刪</button>';
     modal.classList.remove('hidden');
 
-    bodyEl.querySelectorAll('.event-card-info').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (window.showCardDetail) window.showCardDetail(btn.dataset.id);
+    // 點卡牌本體 → 查看詳情
+    bodyEl.querySelectorAll('.event-selectable-card').forEach(el => {
+        el.addEventListener('click', (e) => {
+            if (e.target.closest('.event-remove-confirm-btn')) return;
+            if (window.showCardDetail) window.showCardDetail(el.dataset.id);
         });
     });
 
-    bodyEl.querySelectorAll('.event-card-remove-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
+    // 只有點「移除」按鈕才刪除
+    bodyEl.querySelectorAll('.event-remove-confirm-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
             const idx = gameState.playerDeck.indexOf(btn.dataset.id);
             if (idx >= 0) { gameState.playerDeck.splice(idx, 1); saveRunState(); }
             modal.classList.add('hidden');
@@ -394,83 +402,96 @@ function showCardRemoveEvent() {
 // --- 商人事件 ---
 function showMerchantEvent(floor) {
     const modal = document.getElementById('event-modal');
+    const descEl = modal.querySelector('.event-desc');
     modal.querySelector('.event-title').textContent = '🏪 神秘商人';
-    modal.querySelector('.event-desc').textContent = `💰 你的金幣：${gameState.playerGold}`;
+    descEl.textContent = `💰 你的金幣：${gameState.playerGold}`;
     const bodyEl = modal.querySelector('.event-body');
 
     const vocabDiff = FLOOR_CONFIG[Math.min(floor - 1, FLOOR_CONFIG.length - 1)].vocabDifficulty;
     const activeCards = getActiveWordCards();
     const shopCards = shuffleArray(activeCards.filter(c => c.difficulty <= vocabDiff)).slice(0, 3);
 
-    let html = '<div class="merchant-items">';
+    function renderMerchant() {
+        let html = '<div class="event-cards-grid">';
 
-    // 卡牌商品
-    shopCards.forEach(card => {
-        const price = 15 + card.difficulty * 10;
-        html += `<div class="merchant-item card-item" data-id="${card.id}" data-price="${price}">
-            <button class="event-card-info merchant-card-info" data-id="${card.id}" title="查看卡片">🔍</button>
-            <span>${card.emoji} ${card.en}</span>
-            <span class="merchant-price">💰${price}</span>
+        shopCards.forEach(card => {
+            const price = 15 + card.difficulty * 10;
+            const rarityKey = getCardRarity(card);
+            const rarity = RARITY_CONFIG[rarityKey];
+            const art = getCardArt(card.id);
+            const canAfford = gameState.playerGold >= price;
+            html += `<div class="de-card rarity-${rarityKey} event-selectable-card${canAfford ? '' : ' merchant-cant-afford'}"
+                data-id="${card.id}" data-price="${price}" style="border-color:${rarity.color}; cursor:pointer; position:relative">
+                <div class="de-card-top" style="background:${rarity.color}">
+                    <div class="de-card-cost">${card.cost}</div>
+                    <div class="de-card-name">${card.en}</div>
+                </div>
+                <div class="de-card-art">${art}</div>
+                <div class="de-card-desc"><span class="de-card-zh">${card.zh}</span><br>${card.desc.replace('{v}', card.value || 0)}</div>
+                <button class="merchant-buy-btn" data-id="${card.id}" data-price="${price}" ${canAfford ? '' : 'disabled'}>💰 ${price}</button>
+            </div>`;
+        });
+
+        html += '</div>';
+        html += `<div class="merchant-services">
+            <button class="merchant-service-btn heal-item" data-price="20" ${gameState.playerGold >= 20 ? '' : 'disabled'}>❤️ 回復 15 HP &nbsp; 💰20</button>
+            <button class="merchant-service-btn remove-item" data-price="30" ${gameState.playerGold >= 30 ? '' : 'disabled'}>🗑️ 刪除一張卡 &nbsp; 💰30</button>
         </div>`;
-    });
+        html += '<button class="event-skip-btn" style="margin-top:12px">👋 離開商店</button>';
+        bodyEl.innerHTML = html;
 
-    // 回血商品
-    html += `<div class="merchant-item heal-item" data-price="20">
-        <span>❤️ 回復 15 HP</span>
-        <span class="merchant-price">💰20</span>
-    </div>`;
-
-    // 刪卡服務
-    html += `<div class="merchant-item remove-item" data-price="30">
-        <span>🗑️ 刪除一張卡</span>
-        <span class="merchant-price">💰30</span>
-    </div>`;
-
-    html += '</div><button class="event-skip-btn">👋 離開商店</button>';
-    bodyEl.innerHTML = html;
-    modal.classList.remove('hidden');
-
-    bodyEl.querySelectorAll('.merchant-card-info').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (window.showCardDetail) window.showCardDetail(btn.dataset.id);
+        // 點卡牌本體 → 查看詳情
+        bodyEl.querySelectorAll('.event-selectable-card').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (e.target.closest('.merchant-buy-btn')) return;
+                if (window.showCardDetail) window.showCardDetail(el.dataset.id);
+            });
         });
-    });
 
-    bodyEl.querySelectorAll('.card-item').forEach(el => {
-        el.addEventListener('click', () => {
-            const price = parseInt(el.dataset.price);
-            if (gameState.playerGold < price) { el.style.animation = 'shake 0.3s'; return; }
-            gameState.playerGold -= price;
-            gameState.playerDeck.push(el.dataset.id);
-            const coll = getPlayerCollection(); coll.push(el.dataset.id); savePlayerCollection(coll);
-            cloudSet('vocabSpire_playerCollection', 'playerCollection', coll);
-            el.remove();
-            modal.querySelector('.event-desc').textContent = `💰 你的金幣：${gameState.playerGold}`;
+        // 購買卡牌
+        bodyEl.querySelectorAll('.merchant-buy-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const price = parseInt(btn.dataset.price);
+                if (gameState.playerGold < price) return;
+                gameState.playerGold -= price;
+                gameState.playerDeck.push(btn.dataset.id);
+                const coll = getPlayerCollection(); coll.push(btn.dataset.id); savePlayerCollection(coll);
+                cloudSet('vocabSpire_playerCollection', 'playerCollection', coll);
+                saveRunState();
+                // 從商品清單移除
+                const idx = shopCards.findIndex(c => c.id === btn.dataset.id);
+                if (idx >= 0) shopCards.splice(idx, 1);
+                descEl.textContent = `💰 你的金幣：${gameState.playerGold}`;
+                renderMerchant();
+            });
+        });
+
+        bodyEl.querySelector('.heal-item')?.addEventListener('click', function() {
+            if (gameState.playerGold < 20) return;
+            gameState.playerGold -= 20;
+            gameState.playerHp = Math.min(gameState.playerMaxHp, gameState.playerHp + 15);
             saveRunState();
+            descEl.textContent = `💰 你的金幣：${gameState.playerGold}`;
+            renderMerchant();
         });
-    });
 
-    bodyEl.querySelector('.heal-item')?.addEventListener('click', function() {
-        if (gameState.playerGold < 20) { this.style.animation = 'shake 0.3s'; return; }
-        gameState.playerGold -= 20;
-        gameState.playerHp = Math.min(gameState.playerMaxHp, gameState.playerHp + 15);
-        this.remove();
-        modal.querySelector('.event-desc').textContent = `💰 你的金幣：${gameState.playerGold}`;
-        saveRunState();
-    });
+        bodyEl.querySelector('.remove-item')?.addEventListener('click', function() {
+            if (gameState.playerGold < 30) return;
+            gameState.playerGold -= 30;
+            saveRunState();
+            modal.classList.add('hidden');
+            showCardRemoveEvent();
+        });
 
-    bodyEl.querySelector('.remove-item')?.addEventListener('click', function() {
-        if (gameState.playerGold < 30) { this.style.animation = 'shake 0.3s'; return; }
-        gameState.playerGold -= 30;
-        modal.classList.add('hidden');
-        showCardRemoveEvent();
-    });
+        bodyEl.querySelector('.event-skip-btn').addEventListener('click', () => {
+            modal.classList.add('hidden');
+            showMap();
+        });
+    }
 
-    bodyEl.querySelector('.event-skip-btn').addEventListener('click', () => {
-        modal.classList.add('hidden');
-        showMap();
-    });
+    renderMerchant();
+    modal.classList.remove('hidden');
 }
 
 // --- 祝福事件 ---
