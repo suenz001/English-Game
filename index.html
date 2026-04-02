@@ -11,6 +11,7 @@
 
     <!-- ===== 使用者狀態列 ===== -->
     <div id="user-bar" class="user-bar">
+        <button id="settings-btn" class="settings-gear-btn" title="遊戲設定">⚙️</button>
         <button id="login-btn" class="login-btn">🔐 登入/註冊</button>
         <div id="user-info" class="user-info hidden">
             <span id="user-email" class="user-email"></span>
@@ -218,6 +219,47 @@
             </div>
             <div id="card-detail-desc" class="card-detail-desc">效果說明</div>
             <button id="card-detail-close-btn" class="card-detail-close-btn">關閉 (Click anywhere)</button>
+        </div>
+    </div>
+
+    <!-- ===== 設定 Modal ===== -->
+    <div id="settings-modal" class="hidden">
+        <div class="settings-container">
+            <h2 class="settings-title">⚙️ 遊戲設定</h2>
+
+            <div class="settings-section">
+                <h3 class="settings-section-title">🔊 音量設定</h3>
+                <div class="settings-row">
+                    <label class="settings-label">🎮 音效</label>
+                    <input type="range" id="sfx-volume-slider" class="settings-slider" min="0" max="100" value="80">
+                    <span id="sfx-volume-display" class="settings-vol-display">80%</span>
+                </div>
+                <div class="settings-row">
+                    <label class="settings-label">🗣️ 語音</label>
+                    <input type="range" id="voice-volume-slider" class="settings-slider" min="0" max="100" value="100">
+                    <span id="voice-volume-display" class="settings-vol-display">100%</span>
+                </div>
+                <div class="settings-row settings-row-disabled">
+                    <label class="settings-label">🎵 音樂 <small>（即將推出）</small></label>
+                    <input type="range" id="music-volume-slider" class="settings-slider" min="0" max="100" value="50" disabled>
+                    <span id="music-volume-display" class="settings-vol-display muted">50%</span>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 class="settings-section-title">📊 遊戲資料</h3>
+                <button id="settings-reset-btn" class="settings-action-btn danger">🗑️ 重製卡片進度</button>
+            </div>
+
+            <div id="settings-account-section" class="settings-section hidden">
+                <h3 class="settings-section-title">👤 帳號管理</h3>
+                <div class="settings-account-btns">
+                    <button id="settings-change-pw-btn" class="settings-action-btn">🔑 變更密碼</button>
+                    <button id="settings-delete-account-btn" class="settings-action-btn danger">❌ 刪除帳號</button>
+                </div>
+            </div>
+
+            <button id="settings-close-btn" class="settings-close-btn">✕ 關閉</button>
         </div>
     </div>
 

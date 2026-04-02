@@ -1,6 +1,14 @@
 // ===== 語音系統（優化快取與穩定音源版）=====
 // 解決原本 Google TTS 會因為 CORS 阻擋導致 Blob 快取失敗，以及頻繁請求被限制而產生的延遲問題。
 
+// ===== 語音音量控制 =====
+let voiceVolume = parseFloat(localStorage.getItem('vocabSpire_voiceVolume') ?? '1.0');
+export function setVoiceVolume(val) {
+    voiceVolume = Math.max(0, Math.min(1, val));
+    localStorage.setItem('vocabSpire_voiceVolume', voiceVolume);
+}
+export function getVoiceVolume() { return voiceVolume; }
+
 let currentAudio = null;
 let preloaded = false;
 // 快取改為儲存 Audio 物件實例，而不是 URL 字串或 Blob
@@ -67,7 +75,8 @@ export function speakWord(word, rate = 1.0) {
 
             // 每次播放前重置播放進度
             audio.currentTime = 0;
-            
+            audio.volume = voiceVolume;
+
             // 支援直接調整 HTML5 Audio 的播放速度
             if (audio.playbackRate !== undefined) {
                 audio.playbackRate = rate;
@@ -149,7 +158,7 @@ function useSpeechSynthesis(word, rate = 0.85) {
             u.lang = 'en-US';
             u.rate = rate;
             u.pitch = 1.0;
-            u.volume = 1.0;
+            u.volume = voiceVolume;
             if (englishVoice) u.voice = englishVoice;
 
             const safety = setTimeout(resolve, 3000);

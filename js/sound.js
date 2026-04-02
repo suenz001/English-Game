@@ -2,6 +2,14 @@
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let ctx = null;
 
+// ===== 音量控制 =====
+let sfxVolume = parseFloat(localStorage.getItem('vocabSpire_sfxVolume') ?? '0.8');
+export function setSfxVolume(val) {
+    sfxVolume = Math.max(0, Math.min(1, val));
+    localStorage.setItem('vocabSpire_sfxVolume', sfxVolume);
+}
+export function getSfxVolume() { return sfxVolume; }
+
 function getCtx() {
     if (!ctx) ctx = new AudioCtx();
     if (ctx.state === 'suspended') ctx.resume();
@@ -14,7 +22,8 @@ function tone(freq, duration, type = 'sine', vol = 0.15) {
     const gain = c.createGain();
     osc.type = type;
     osc.frequency.setValueAtTime(freq, c.currentTime);
-    gain.gain.setValueAtTime(vol, c.currentTime);
+    const v = Math.min(1, vol * sfxVolume * 2.5);
+    gain.gain.setValueAtTime(v, c.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
     osc.connect(gain);
     gain.connect(c.destination);
@@ -29,7 +38,8 @@ function sweep(f1, f2, dur, type = 'sawtooth', vol = 0.12) {
     osc.type = type;
     osc.frequency.setValueAtTime(f1, c.currentTime);
     osc.frequency.exponentialRampToValueAtTime(f2, c.currentTime + dur);
-    gain.gain.setValueAtTime(vol, c.currentTime);
+    const v = Math.min(1, vol * sfxVolume * 2.5);
+    gain.gain.setValueAtTime(v, c.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
     osc.connect(gain);
     gain.connect(c.destination);

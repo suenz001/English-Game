@@ -1,7 +1,9 @@
 import { prepareNewRun, confirmHeroAndStartMap, showMap, loadSavedRun } from './js/map.js';
 import { initAuthUI } from './js/auth.js';
-import { onUserChange, cloudGet, cloudSet } from './js/cloud-save.js';
-import { sfxUI, sfxDraw } from './js/sound.js';
+import { onUserChange, cloudGet, cloudSet, getUser } from './js/cloud-save.js';
+import { sfxUI, sfxDraw, setSfxVolume, getSfxVolume } from './js/sound.js';
+import { setVoiceVolume, getVoiceVolume } from './js/speech.js';
+import { auth, sendPasswordResetEmail, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from './js/firebase-config.js';
 
 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, background: '#2d1b4e', color: '#fff' });
 
@@ -543,4 +545,142 @@ closeDetailBtn.addEventListener('click', () => { sfxUI(); closeDetail(); });
 detailModal.addEventListener('click', (e) => {
     // 若點擊在背景黑底而非內容區，則關閉
     if (e.target === detailModal) closeDetail();
+});
+
+// ===== 設定 Modal =====
+function openSettings() {
+    sfxUI();
+    // 讀取目前音量值並更新滑桿
+    const sfxVal = Math.round(getSfxVolume() * 100);
+    const voiceVal = Math.round(getVoiceVolume() * 100);
+    const sfxSlider = document.getElementById('sfx-volume-slider');
+    const voiceSlider = document.getElementById('voice-volume-slider');
+    sfxSlider.value = sfxVal;
+    voiceSlider.value = voiceVal;
+    document.getElementById('sfx-volume-display').textContent = sfxVal + '%';
+    document.getElementById('voice-volume-display').textContent = voiceVal + '%';
+    updateSliderTrack(sfxSlider);
+    updateSliderTrack(voiceSlider);
+
+    // 顯示/隱藏帳號區塊
+    const user = getUser();
+    document.getElementById('settings-account-section').classList.toggle('hidden', !user);
+
+    document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+function updateSliderTrack(slider) {
+    const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+    slider.style.background = `linear-gradient(to right, #9b59b6 ${pct}%, #4a235a ${pct}%)`;
+}
+
+document.getElementById('settings-btn').addEventListener('click', openSettings);
+
+document.getElementById('settings-close-btn').addEventListener('click', () => {
+    sfxUI();
+    document.getElementById('settings-modal').classList.add('hidden');
+});
+
+document.getElementById('settings-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('settings-modal')) {
+        sfxUI();
+        document.getElementById('settings-modal').classList.add('hidden');
+    }
+});
+
+// 音效音量滑桿
+document.getElementById('sfx-volume-slider').addEventListener('input', (e) => {
+    const val = parseInt(e.target.value) / 100;
+    setSfxVolume(val);
+    document.getElementById('sfx-volume-display').textContent = e.target.value + '%';
+    updateSliderTrack(e.target);
+    sfxUI(); // 試聽
+});
+
+// 語音音量滑桿
+document.getElementById('voice-volume-slider').addEventListener('input', (e) => {
+    const val = parseInt(e.target.value) / 100;
+    setVoiceVolume(val);
+    document.getElementById('voice-volume-display').textContent = e.target.value + '%';
+    updateSliderTrack(e.target);
+});
+
+// 設定內的重製進度按鈕（重用已有邏輯）
+document.getElementById('settings-reset-btn').addEventListener('click', () => {
+    document.getElementById('settings-modal').classList.add('hidden');
+    document.getElementById('reset-btn').click();
+});
+
+// 變更密碼（寄送重設信）
+document.getElementById('settings-change-pw-btn').addEventListener('click', async () => {
+    sfxUI();
+    const user = getUser();
+    if (!user) return;
+    Swal.fire({
+        title: '🔑 變更密碼',
+        html: `<div style="font-size:14px;color:#ddd;line-height:1.8">
+            將寄送密碼重設信到：<br>
+            <strong style="color:#f1c40f">${user.email}</strong><br>
+            <span style="color:#888;font-size:0.9em">請至信箱點擊連結完成重設</span>
+        </div>`,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: '📧 寄送重設信',
+        cancelButtonText: '取消',
+        background: '#2d1b4e', color: '#fff',
+        confirmButtonColor: '#9b59b6', cancelButtonColor: '#555',
+    }).then(async r => {
+        if (!r.isConfirmed) return;
+        try {
+            await sendPasswordResetEmail(auth, user.email);
+            Toast.fire({ icon: 'success', title: '✅ 重設信已寄出！請查看信箱' });
+        } catch {
+            Toast.fire({ icon: 'error', title: '寄送失敗，請稍後再試' });
+        }
+    });
+});
+
+// 刪除帳號
+document.getElementById('settings-delete-account-btn').addEventListener('click', async () => {
+    sfxUI();
+    const user = getUser();
+    if (!user) return;
+
+    const { value: password } = await Swal.fire({
+        title: '❌ 刪除帳號',
+        html: `<div style="font-size:14px;color:#ddd;line-height:1.8;margin-bottom:12px">
+            此操作將<strong style="color:#e74c3c">永久刪除</strong>您的帳號及所有雲端資料，<br>且<strong style="color:#e74c3c">無法復原</strong>。<br>
+            <span style="color:#888;font-size:0.9em">請輸入密碼確認身分</span>
+        </div>
+        <input id="swal-del-pw" type="password" class="swal2-input" placeholder="輸入您的密碼"
+            style="background:#1a0a2e;color:#fff;border:1px solid #e74c3c">`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '確認刪除',
+        cancelButtonText: '取消',
+        background: '#2d1b4e', color: '#fff',
+        confirmButtonColor: '#e74c3c', cancelButtonColor: '#555',
+        preConfirm: () => {
+            const pw = document.getElementById('swal-del-pw').value;
+            if (!pw) { Swal.showValidationMessage('請輸入密碼'); return false; }
+            return pw;
+        }
+    });
+
+    if (!password) return;
+
+    try {
+        const credential = EmailAuthProvider.credential(user.email, password);
+        await reauthenticateWithCredential(user, credential);
+        await deleteUser(user);
+        Toast.fire({ icon: 'success', title: '帳號已刪除' });
+        document.getElementById('settings-modal').classList.add('hidden');
+    } catch (err) {
+        const msg = {
+            'auth/wrong-password': '密碼錯誤，請重新輸入',
+            'auth/invalid-credential': '密碼錯誤，請重新輸入',
+            'auth/too-many-requests': '嘗試次數過多，請稍後再試',
+        }[err.code] || '操作失敗，請稍後再試';
+        Toast.fire({ icon: 'error', title: msg });
+    }
 });
