@@ -364,6 +364,9 @@ export const WORD_CARDS = [
     { id: 'guardian', en: 'guardian', zh: '守護者', difficulty: 3, rarity: 'epic',
       type: 'power', cost: 1, value: 3, emoji: '🛡️',
       desc: '守護荊棘，受擊反彈 {v} 傷害', extra: { thorns: true } },
+    { id: 'helicopter', en: 'helicopter', zh: '直升機', difficulty: 3, rarity: 'legendary',
+      type: 'attack', cost: 2, value: 14, emoji: '🚁',
+      desc: '空中掃射，每次造成 {v} 點傷害，共攻擊兩次', extra: { hits: 2 } },
 ];
 
 // ===== 相似拼字庫（用於出題干擾選項）=====
@@ -466,6 +469,7 @@ export const SIMILAR_WORDS = {
     phoenix: ['phonics', 'phrases', 'physics', 'pioneer', 'pillows', 'pointed', 'posture', 'pleased'],
     champion: ['chambers', 'charging', 'chapters', 'chairman', 'changing', 'charming', 'channels', 'checking'],
     guardian: ['greeting', 'guidance', 'gathered', 'gambling', 'grateful', 'generous', 'gripping', 'grasping'],
+    helicopter: ['holicopter', 'helicapoor', 'halicopter', 'helicoptor', 'helocopter', 'helicapter', 'helicoptec', 'pelicopter']
 };
 
 // ===== 敵人定義 =====

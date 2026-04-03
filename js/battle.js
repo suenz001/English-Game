@@ -259,8 +259,33 @@ async function showQuiz(playedCard, handIndex) {
     // ===== 決定考題卡牌（題庫模式從同稀有度隨機抽）=====
     let quizCard = playedCard;
     if (getQuizMode() === 'pool') {
-        const pool = getActiveWordCards().filter(c => c.rarity === playedCard.rarity);
-        if (pool.length > 0) quizCard = pool[Math.floor(Math.random() * pool.length)];
+        const rarity = playedCard.rarity || 'common';
+        const pool = getActiveWordCards().filter(c => (c.rarity || 'common') === rarity);
+        if (pool.length > 0) {
+            let bags = {};
+            try { bags = JSON.parse(localStorage.getItem('vocabSpire_quizBags')) || {}; } catch(e){}
+            
+            // 確保袋子存在且裡面有合法的有效卡牌
+            if (!bags[rarity] || !Array.isArray(bags[rarity])) bags[rarity] = [];
+            
+            // 從袋子裡抽出一個「有效的卡牌」，直到找到為止或袋子空了
+            let drawnWord = null;
+            while (bags[rarity].length > 0) {
+                const id = bags[rarity].pop();
+                drawnWord = pool.find(w => w.id === id);
+                if (drawnWord) break;
+            }
+            
+            // 如果袋子抽完(或都無效)，重新洗牌填滿袋子
+            if (!drawnWord) {
+                bags[rarity] = shuffleArray([...pool]).map(c => c.id);
+                const id = bags[rarity].pop();
+                drawnWord = pool.find(w => w.id === id);
+            }
+            
+            localStorage.setItem('vocabSpire_quizBags', JSON.stringify(bags));
+            quizCard = drawnWord || pool[0];
+        }
     }
     const isPoolMode = quizCard.id !== playedCard.id;
 
