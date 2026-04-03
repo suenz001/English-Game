@@ -432,8 +432,8 @@ async function finishQuiz(correct, quizCard, playedCard, handIndex, quizEl) {
 
     quizEl.classList.add('hidden');
     document.getElementById('quiz-speak-btn').classList.add('hidden');
-    animating = false;
-    executeCard(playedCard, handIndex, correct);
+    // 注意：animating 保持 true，executeCard 完成後才由它自己設 false
+    await executeCard(playedCard, handIndex, correct);
 }
 
 // ===== 執行卡牌效果 =====
@@ -448,6 +448,7 @@ async function executeCard(card, handIndex, correct) {
         addLog(`❌ 答錯了！${card.emoji} ${card.en} 發動失敗！`);
         shakeElement('.player-area');
         renderBattle();
+        animating = false;
         return;
     }
 
@@ -575,6 +576,7 @@ async function executeCard(card, handIndex, correct) {
         targetEnemyIdx = s.enemies.findIndex(e => e.hp > 0);
     }
     if (s.enemies.every(e => e.hp <= 0)) { handleVictory(); return; }
+    animating = false;
     renderBattle();
 }
 
