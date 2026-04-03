@@ -417,7 +417,11 @@ function calcPowerScore(w) {
         if (ex.energy)  score += ex.energy * 2;         // 每點能量 ≈ 2 (新平衡公式)
         if (ex.reflect) score += ex.reflect * 1;        // 反傷 ≈ 1
     } else if (w.type === 'skill') {
-        // 技能的主數值就是效果本身，不再疊加
+        let pt = 0;
+        if (ex.draw) pt += w.value;
+        else if (ex.bonusDraw) pt += ex.bonusDraw;
+        if (ex.energy) pt += w.value;
+        score = pt > 0 ? pt : w.value;
     } else if (w.type === 'power') {
         // 能力牌本質上是持久效果，直接用 value
     }
@@ -482,7 +486,7 @@ function runBalanceCheck() {
             const lowerR = rarityKeys[i], higherR = rarityKeys[i + 1];
             const lowerMax = Math.max(...byRarity[lowerR].map(c => calcPowerScore(c)));
             const higherMin = Math.min(...byRarity[higherR].map(c => calcPowerScore(c)));
-            const minStep = RARITY_STEP_MIN[type] || 1;
+            const minStep = RARITY_STEP_MIN[type] ?? 1;
             if (higherMin < lowerMax + minStep) {
                 issues.push({
                     level: 'error',
@@ -540,7 +544,7 @@ function renderCardPool() {
                 <div class="pool-toggle"><input type="checkbox" ${isActive ? 'checked' : ''} data-id="${card.id}"></div>
                 <div class="pool-preview">${artHtml}</div>
                 <div class="pool-info">
-                    <span class="pool-en">${card.en} <button class="admin-info-btn" data-id="${card.id}" style="border:none;background:none;cursor:pointer;font-size:16px;" title="檢視卡片資訊">🔍</button></span><span class="pool-zh">${card.zh}</span>
+                    <span class="pool-en">${card.en} <button class="admin-info-btn" data-id="${card.id}" style="border:none;background:none;cursor:pointer;font-size:16px;" title="檢視卡片資訊">🔍</button> <button class="admin-edit-btn" data-id="${card.id}" style="border:none;background:none;cursor:pointer;font-size:16px;" title="編輯卡片">✏️</button></span><span class="pool-zh">${card.zh}</span>
                     <div class="pool-meta">${typeLabel[card.type]||''} ${card.desc.replace('{v}',card.value)} | ⚡${card.cost} | <span style="color:${rarityConf.color}">${rarityLabel}</span></div>
                 </div>
                 <div class="pool-img-actions">
@@ -556,6 +560,14 @@ function renderCardPool() {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (window.showCardDetail) window.showCardDetail(btn.dataset.id);
+        });
+    });
+
+    // Edit click events
+    container.querySelectorAll('.admin-edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.editWord) window.editWord(btn.dataset.id);
         });
     });
 
