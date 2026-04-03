@@ -3,6 +3,7 @@ import { getCardArt } from './cardart.js';
 import { speakWord, speakWordSlowly, preloadWords } from './speech.js';
 import { sfxAttack, sfxHit, sfxShield, sfxHeal, sfxCardPlay, sfxCorrect, sfxWrong, sfxVictory, sfxDefeat, sfxEnemyAttack, sfxDefenseQuiz, sfxDraw, sfxShuffle, sfxTurnStart, sfxEndTurn, sfxPoison, sfxPoisonTick, sfxRegenTick, sfxDebuff, sfxEnemyBuff, sfxEnemyDeath, sfxThorns } from './sound.js';
 import { generateQuizOptions } from './phonetics.js';
+import { cloudGet, cloudSet } from './cloud-save.js';
 
 let battleState = null;
 let quizTimer = null;
@@ -554,7 +555,7 @@ async function executeCard(card, handIndex, correct) {
             sfxShield();
             if (extra.permAtk) { s.player.buffs.strength += card.value; addLog(`  💪 本場攻擊力 +${card.value}`); }
             if (extra.regen) { s.player.buffs.regen += card.value; addLog(`  🌿 每回合回復 ${card.value} HP`); }
-            if (extra.blockRegen) { s.player.buffs.blockRegen += card.value; addLog(`  🛡️ 每回合獲得 ${card.value} 點護甲`); }
+            if (extra.blockRegen) { s.player.buffs.blockRegen = Math.max(s.player.buffs.blockRegen || 0, card.value); addLog(`  🛡️ 每回合獲得 ${s.player.buffs.blockRegen} 點護甲 (不疊加)`); }
             if (extra.thorns) { s.player.buffs.thorns += card.value; addLog(`  🌹 受擊反彈 ${card.value} 傷害`); }
             showFx('✨', 'fx-heal');
             break;
@@ -839,6 +840,7 @@ function rollAllIntents() {
 
 // ===== 戰鬥結束 =====
 function handleVictory() {
+    clearBattleStateLocally();
     const s = battleState;
     s.enemies.forEach(e => { e.hp = Math.min(e.hp, 0); });
     renderBattle();
@@ -868,6 +870,7 @@ function handleVictory() {
 }
 
 function handleDefeat() {
+    clearBattleStateLocally();
     const s = battleState;
     s.player.hp = 0;
     renderBattle();
@@ -1112,6 +1115,8 @@ function setupCardDrag() {
             }
         });
     });
+
+    saveBattleStateLocally();
 }
 
 // ===== 卡牌獎勵 =====
@@ -1373,3 +1378,47 @@ export function showBattleDeckModal(type) {
 // 綁定點擊事件
 document.getElementById('deck-count').addEventListener('click', () => showBattleDeckModal('deck'));
 document.getElementById('discard-count').addEventListener('click', () => showBattleDeckModal('discard'));
+
+// ===== Mid-Combat 存檔與還原 =====
+let battleSaveTimeout = null;
+
+export function saveBattleStateLocally() {
+    // 若不存在、戰鬥已結束、或是動畫進行中，皆不儲存 (避免存到奇怪的不完整狀態)
+    if (!battleState || battleState.ended || animating) return;
+    
+    clearTimeout(battleSaveTimeout);
+    battleSaveTimeout = setTimeout(() => {
+        const saveObj = cloudGet('vocabSpire_savedRun', 'savedRun');
+        if (saveObj) {
+            saveObj.battleState = battleState;
+            cloudSet('vocabSpire_savedRun', 'savedRun', saveObj);
+        }
+    }, 600); // Debounce 保護
+}
+
+export function clearBattleStateLocally() {
+    if (battleState) battleState.ended = true; // 鎖住不讓 renderBattle 再次存檔
+    clearTimeout(battleSaveTimeout);
+    const saveObj = cloudGet('vocabSpire_savedRun', 'savedRun');
+    if (saveObj && saveObj.battleState) {
+        delete saveObj.battleState;
+        cloudSet('vocabSpire_savedRun', 'savedRun', saveObj);
+    }
+}
+
+export function restoreBattle(savedState, endCallback) {
+    onBattleEnd = endCallback;
+    battleState = savedState;
+    targetEnemyIdx = 0;
+    
+    // 防呆檢查：如果剛好指向死亡的敵人
+    if (battleState.enemies[targetEnemyIdx]?.hp <= 0) {
+        targetEnemyIdx = Math.max(0, battleState.enemies.findIndex(e => e.hp > 0));
+    }
+
+    animating = false;
+    renderBattle();
+    
+    const allWords = getAllWordCards().map(c => c.en);
+    preloadWords(allWords);
+}

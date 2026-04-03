@@ -155,8 +155,16 @@ export function loadSavedRun(battleEndCallback) {
     document.querySelector('.player-sprite').textContent = gameState.playerEmoji;
     
     if (gameState.inBattle) {
-        // 如果在戰鬥中退出，強制重新進入該場戰鬥（重置敵人與回合，但血量維持戰前狀態）
-        enterBattle(gameState.currentFloor + 1);
+        if (save.battleState) {
+            document.getElementById('map-screen').classList.add('hidden');
+            document.getElementById('battle-screen').classList.remove('hidden');
+            import('./battle.js').then(b => {
+                b.restoreBattle(save.battleState, onGameOver);
+            });
+        } else {
+            // 如果在戰鬥中退出但沒存到狀態（舊版存檔），強制重新進入該場戰鬥
+            enterBattle(gameState.currentFloor + 1);
+        }
     } else {
         showMap();
     }
