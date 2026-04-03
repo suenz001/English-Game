@@ -2,7 +2,7 @@
 import { WORD_CARDS, STARTER_DECK, RARITY_CONFIG } from './data.js';
 import { getCardArt } from './cardart.js';
 import { generateConfusingWords } from './phonetics.js';
-import { cloudSet } from './cloud-save.js';
+import { cloudSet, cloudGet, onUserChange } from './cloud-save.js';
 
 const PWD_KEY = 'vocabSpire_adminPwd';
 const WORDS_KEY = 'vocabSpire_customWords';
@@ -12,9 +12,9 @@ const IMAGES_KEY = 'vocabSpire_cardImages';
 
 function getPassword() { return localStorage.getItem(PWD_KEY) || '1234'; }
 function setPassword(p) { localStorage.setItem(PWD_KEY, p); }
-function getCustomWords() { try { return JSON.parse(localStorage.getItem(WORDS_KEY) || '[]'); } catch { return []; } }
+function getCustomWords() { return cloudGet(WORDS_KEY, 'customWords') || []; }
 function saveCustomWords(w) { localStorage.setItem(WORDS_KEY, JSON.stringify(w)); cloudSet(WORDS_KEY, 'customWords', w); }
-function getCustomSimilar() { try { return JSON.parse(localStorage.getItem(SIMILAR_KEY) || '{}'); } catch { return {}; } }
+function getCustomSimilar() { return cloudGet(SIMILAR_KEY, 'customSimilar') || {}; }
 function saveCustomSimilar(s) { localStorage.setItem(SIMILAR_KEY, JSON.stringify(s)); cloudSet(SIMILAR_KEY, 'customSimilar', s); }
 function getAllWords() {
     const custom = getCustomWords();
@@ -22,9 +22,9 @@ function getAllWords() {
     const baseCards = WORD_CARDS.filter(c => !customIds.has(c.id));
     return [...custom.reverse(), ...baseCards];
 }
-function getActiveIds() { try { const r = JSON.parse(localStorage.getItem(ACTIVE_KEY)); return r ? new Set(r) : null; } catch { return null; } }
+function getActiveIds() { const r = cloudGet(ACTIVE_KEY, 'activeCardIds'); return r ? new Set(r) : null; }
 function saveActiveIds(s) { const arr = [...s]; localStorage.setItem(ACTIVE_KEY, JSON.stringify(arr)); cloudSet(ACTIVE_KEY, 'activeCardIds', arr); }
-function getCardImages() { try { return JSON.parse(localStorage.getItem(IMAGES_KEY) || '{}'); } catch { return {}; } }
+function getCardImages() { return cloudGet(IMAGES_KEY, 'cardImages') || {}; }
 function saveCardImages(m) { localStorage.setItem(IMAGES_KEY, JSON.stringify(m)); cloudSet(IMAGES_KEY, 'cardImages', m); }
 
 let currentPoolFilter = 'all';
@@ -139,10 +139,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 解鎖
     document.getElementById('unlock-btn').addEventListener('click', () => {
-        if (pwdInput.value === getPassword()) { pwdScreen.classList.add('hidden'); dashboard.classList.remove('hidden'); renderCardPool(); renderWordList(); }
-        else { pwdError.classList.remove('hidden'); pwdInput.value = ''; setTimeout(() => pwdError.classList.add('hidden'), 2000); }
+        if (pwdInput.value === getPassword()) { 
+            pwdScreen.classList.add('hidden'); 
+            dashboard.classList.remove('hidden'); 
+            renderCardPool(); 
+            renderWordList(); 
+        } else { 
+            pwdError.classList.remove('hidden'); 
+            pwdInput.value = ''; 
+            setTimeout(() => pwdError.classList.add('hidden'), 2000); 
+        }
     });
     pwdInput.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('unlock-btn').click(); });
+
+    // 監聽 Firebase 登入狀態及資料同步
+    onUserChange((user) => {
+        // 如果此時已經在管理畫面，且載入了新的雲端資料，需要重新取得並渲染
+        if (!dashboard.classList.contains('hidden')) {
+            renderCardPool();
+            renderWordList();
+        }
+    });
 
     document.getElementById('logout-btn').addEventListener('click', () => { dashboard.classList.add('hidden'); pwdScreen.classList.remove('hidden'); pwdInput.value = ''; });
     document.getElementById('change-pwd-btn').addEventListener('click', () => {

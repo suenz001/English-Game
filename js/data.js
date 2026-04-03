@@ -593,9 +593,10 @@ export function getCardRarityConfig(card) {
 }
 
 // ===== 自訂單字管理工具 =====
+import { cloudGet, cloudSet } from './cloud-save.js';
+
 export function getCustomWords() {
-    try { return JSON.parse(localStorage.getItem('vocabSpire_customWords') || '[]'); }
-    catch { return []; }
+    return cloudGet('vocabSpire_customWords', 'customWords') || [];
 }
 
 export function getAllWordCards() {
@@ -606,8 +607,7 @@ export function getAllWordCards() {
 }
 
 export function getCustomSimilarWords() {
-    try { return JSON.parse(localStorage.getItem('vocabSpire_customSimilar') || '{}'); }
-    catch { return {}; }
+    return cloudGet('vocabSpire_customSimilar', 'customSimilar') || {};
 }
 
 export function getAllSimilarWords() {
@@ -616,14 +616,12 @@ export function getAllSimilarWords() {
 
 // ===== 家長卡牌池篩選 =====
 export function getActiveCardIds() {
-    try {
-        const ids = JSON.parse(localStorage.getItem('vocabSpire_activeCardIds'));
-        return ids ? new Set(ids) : null; // null = 全部啟用
-    } catch { return null; }
+    const ids = cloudGet('vocabSpire_activeCardIds', 'activeCardIds');
+    return ids ? new Set(ids) : null; // null = 全部啟用
 }
 
 export function saveActiveCardIds(ids) {
-    localStorage.setItem('vocabSpire_activeCardIds', JSON.stringify([...ids]));
+    cloudSet('vocabSpire_activeCardIds', 'activeCardIds', [...ids]);
 }
 
 export function getActiveWordCards() {
@@ -635,31 +633,28 @@ export function getActiveWordCards() {
 
 // ===== 自訂卡牌圖片 =====
 export function getCardImages() {
-    try { return JSON.parse(localStorage.getItem('vocabSpire_cardImages') || '{}'); }
-    catch { return {}; }
+    return cloudGet('vocabSpire_cardImages', 'cardImages') || {};
 }
 
 export function saveCardImages(images) {
-    localStorage.setItem('vocabSpire_cardImages', JSON.stringify(images));
+    cloudSet('vocabSpire_cardImages', 'cardImages', images);
 }
 
 // ===== 玩家牌庫（持久收藏）=====
 export function getPlayerCollection() {
-    try { return JSON.parse(localStorage.getItem('vocabSpire_playerCollection') || '[]'); }
-    catch { return []; }
+    return cloudGet('vocabSpire_playerCollection', 'playerCollection') || [];
 }
 
 export function savePlayerCollection(collection) {
-    localStorage.setItem('vocabSpire_playerCollection', JSON.stringify(collection));
+    cloudSet('vocabSpire_playerCollection', 'playerCollection', collection);
 }
 
 // ===== 玩家牌組配置 =====
 export function getPlayerDeckConfig() {
-    try { return JSON.parse(localStorage.getItem('vocabSpire_playerDeckConfig') || '[]'); }
-    catch { return []; }
+    return cloudGet('vocabSpire_playerDeckConfig', 'playerDeckConfig') || [];
 }
 
 export function savePlayerDeckConfig(deck) {
-    localStorage.setItem('vocabSpire_playerDeckConfig', JSON.stringify(deck));
+    cloudSet('vocabSpire_playerDeckConfig', 'playerDeckConfig', deck);
 }
 
