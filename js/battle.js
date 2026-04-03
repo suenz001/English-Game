@@ -157,9 +157,6 @@ async function startPlayerTurn() {
     if (s.enemies[targetEnemyIdx]?.hp <= 0) {
         targetEnemyIdx = s.enemies.findIndex(e => e.hp > 0);
     }
-    // 玩家弱化
-    if (s.player.buffs.vulnerable > 0) { s.player.buffs.vulnerable--; addLog(`⚠️ 易傷剩餘 ${s.player.buffs.vulnerable} 回合`); }
-    if (s.player.buffs.weak > 0) { s.player.buffs.weak--; addLog(`😵‍💫 虛弱剩餘 ${s.player.buffs.weak} 回合`); }
 
     await drawCards(GAME_CONSTANTS.HAND_SIZE);
     
@@ -579,6 +576,11 @@ export function endTurn() {
     const s = battleState;
     s.player.discard.push(...s.player.hand);
     s.player.hand = [];
+
+    // 玩家弱化回合在玩家回合結束時才扣除，避免剛中 Debuff 輪到玩家就解除
+    if (s.player.buffs.vulnerable > 0) { s.player.buffs.vulnerable--; addLog(`⚠️ 易傷剩餘 ${s.player.buffs.vulnerable} 回合`); }
+    if (s.player.buffs.weak > 0) { s.player.buffs.weak--; addLog(`😵‍💫 虛弱剩餘 ${s.player.buffs.weak} 回合`); }
+
     enemyTurn();
 }
 

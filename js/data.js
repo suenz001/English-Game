@@ -470,57 +470,68 @@ export const SIMILAR_WORDS = {
 
 // ===== 敵人定義 =====
 export const ENEMIES = {
-    slime: { name: '史萊姆', emoji: '🟢', hp: 18, attacks: [
-        { name: '撞擊', damage: 3, emoji: '💥' },
+    slime: { name: '史萊姆', emoji: '🟢', hp: 20, attacks: [
+        { name: '撞擊', damage: 4, emoji: '💥' },
+        { name: '重砸', damage: 6, emoji: '☄️' },
         { name: '黏液', damage: 2, emoji: '💧', applyWeak: 1 },
-        { name: '分裂', damage: 0, emoji: '🟢', heal: 4 },
+        { name: '分裂', damage: 0, emoji: '🟢', heal: 5 },
     ]},
-    bat: { name: '蝙蝠', emoji: '🦇', hp: 14, attacks: [
+    bat: { name: '蝙蝠', emoji: '🦇', hp: 16, attacks: [
         { name: '啃咬', damage: 4, emoji: '🦷' },
+        { name: '吸血', damage: 3, emoji: '🩸', heal: 3 },
+        { name: '啃咬', damage: 5, emoji: '🦷' },
         { name: '超音波', damage: 2, emoji: '🔊', applyVuln: 1 },
     ]},
-    goblin: { name: '哥布林', emoji: '👺', hp: 22, attacks: [
-        { name: '棍棒', damage: 5, emoji: '🏐' },
-        { name: '偷竊', damage: 3, emoji: '💰' },
+    goblin: { name: '哥布林', emoji: '👺', hp: 24, attacks: [
+        { name: '棍棒', damage: 6, emoji: '🏐' },
+        { name: '重棍', damage: 8, emoji: '🏏' },
+        { name: '偷竊', damage: 4, emoji: '💰' },
         { name: '嘲諽', damage: 0, emoji: '😜', applyWeak: 1 },
     ]},
-    mushroom: { name: '毒蘑菇', emoji: '🍄', hp: 15, attacks: [
+    mushroom: { name: '毒蘑菇', emoji: '🍄', hp: 20, attacks: [
         { name: '毒孢子', damage: 2, emoji: '☁️', poison: 2 },
-        { name: '頭槌', damage: 4, emoji: '💥' },
+        { name: '猛毒', damage: 1, emoji: '🦠', poison: 3 },
+        { name: '頭槌', damage: 5, emoji: '💥' },
         { name: '迷幻粉', damage: 0, emoji: '🌀', applyVuln: 1, applyWeak: 1 },
     ]},
-    skeleton: { name: '骷髏兵', emoji: '💀', hp: 30, attacks: [
-        { name: '骨劍', damage: 7, emoji: '🗡️' },
-        { name: '骨盾', damage: 0, emoji: '🛡️', block: 5 },
-        { name: '詛咒', damage: 3, emoji: '👻', applyVuln: 2 },
+    skeleton: { name: '骷髏兵', emoji: '💀', hp: 32, attacks: [
+        { name: '骨劍', damage: 8, emoji: '🗡️' },
+        { name: '刺擊', damage: 10, emoji: '🗡️' },
+        { name: '骨盾', damage: 0, emoji: '🛡️', block: 6 },
+        { name: '詛咒', damage: 4, emoji: '👻', applyVuln: 2 },
         { name: '死亡凝視', damage: 0, emoji: '💀', applyWeak: 2, applyVuln: 1 },
     ]},
-    dark_wolf: { name: '暗影狼', emoji: '🐺', hp: 26, attacks: [
+    dark_wolf: { name: '暗影狼', emoji: '🐺', hp: 30, attacks: [
         { name: '撕咬', damage: 8, emoji: '🦷' },
+        { name: '血盆大口', damage: 12, emoji: '🐾' },
         { name: '嚎叫', damage: 0, emoji: '🌙', buffSelf: 2 },
         { name: '恐嚇', damage: 3, emoji: '😨', applyWeak: 2 },
     ]},
-    orc: { name: '獸人', emoji: '👹', hp: 40, attacks: [
-        { name: '巨斧', damage: 10, emoji: '🪓' },
+    orc: { name: '獸人', emoji: '👹', hp: 45, attacks: [
+        { name: '巨斧', damage: 12, emoji: '🪓' },
+        { name: '瘋狂劈砍', damage: 16, emoji: '⚔️' },
         { name: '躐踏', damage: 6, emoji: '🦶', applyVuln: 1 },
-        { name: '戰吼', damage: 0, emoji: '📢', buffSelf: 2, block: 4 },
+        { name: '戰吼', damage: 0, emoji: '📢', buffSelf: 3, block: 5 },
     ]},
-    dark_knight: { name: '黑騎士', emoji: '🖤', hp: 48, attacks: [
-        { name: '暗黑斬', damage: 12, emoji: '⚔️' },
-        { name: '黑盾', damage: 0, emoji: '🛡️', block: 8 },
+    dark_knight: { name: '黑騎士', emoji: '🖤', hp: 55, attacks: [
+        { name: '暗黑斬', damage: 15, emoji: '⚔️' },
+        { name: '破防猛擊', damage: 18, emoji: '💥' },
+        { name: '黑盾', damage: 0, emoji: '🛡️', block: 10 },
         { name: '恐懼', damage: 4, emoji: '😱', applyWeak: 2 },
         { name: '破甲', damage: 6, emoji: '💔', applyVuln: 2 },
     ]},
-    necromancer: { name: '死靈法師', emoji: '🧙', hp: 38, attacks: [
-        { name: '暗影彈', damage: 9, emoji: '🔮' },
-        { name: '吸血', damage: 7, emoji: '🩸', heal: 7 },
+    necromancer: { name: '死靈法師', emoji: '🧙', hp: 42, attacks: [
+        { name: '暗影彈', damage: 10, emoji: '🔮' },
+        { name: '靈魂收割', damage: 14, emoji: '💀' },
+        { name: '吸血', damage: 8, emoji: '🩸', heal: 8 },
         { name: '虛弱詛咒', damage: 0, emoji: '☠️', applyWeak: 2, applyVuln: 2 },
     ]},
-    dragon_lord: { name: '龍王', emoji: '🐉', hp: 90, isBoss: true, attacks: [
-        { name: '龍息', damage: 12, emoji: '🔥', poison: 3 },
-        { name: '尾擊', damage: 8, emoji: '💥', applyVuln: 2 },
-        { name: '龍鳞', damage: 0, emoji: '🛡️', block: 12 },
-        { name: '毀滅吐息', damage: 20, emoji: '☄️' },
+    dragon_lord: { name: '龍王', emoji: '🐉', hp: 120, isBoss: true, attacks: [
+        { name: '龍息', damage: 15, emoji: '🔥', poison: 3 },
+        { name: '尾擊', damage: 10, emoji: '💥', applyVuln: 2 },
+        { name: '烈焰風暴', damage: 25, emoji: '☄️' },
+        { name: '龍鳞', damage: 0, emoji: '🛡️', block: 15 },
+        { name: '毀滅吐息', damage: 30, emoji: '☄️' },
         { name: '龍威', damage: 5, emoji: '🐲', applyWeak: 3, applyVuln: 2 },
     ]},
 };
