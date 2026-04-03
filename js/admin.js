@@ -409,13 +409,13 @@ function calcPowerScore(w) {
     if (w.type === 'attack') {
         if (ex.hits)       score = score * 2;          // 二連擊實際傷害 x2
         if (ex.aoe)        score = score * 1.5;        // 全體攻擊加值
-        if (ex.poison)     score += ex.poison * 1.5;   // 每層毒 ≈ 1.5
-        if (ex.vulnerable) score += ex.vulnerable * 2; // 易傷每回合 ≈ 2
-        if (ex.weak)       score += ex.weak * 2;       // 虛弱每回合 ≈ 2
+        if (ex.poison)     score += ex.poison * 1;     // 每層毒 ≈ 1 (新平衡公式)
+        if (ex.vulnerable) score += ex.vulnerable * 1; // 易傷每回合 ≈ 1 (新平衡公式)
+        if (ex.weak)       score += ex.weak * 1;       // 虛弱每回合 ≈ 1 (新平衡公式)
     } else if (w.type === 'defend') {
-        if (ex.draw)    score += ex.draw * 3;           // 每張牌 ≈ 3
-        if (ex.energy)  score += ex.energy * 3;         // 每點能量 ≈ 3
-        if (ex.reflect) score += ex.reflect * (ex.reflectTurns || 2);
+        if (ex.draw)    score += ex.draw * 2;           // 每張牌 ≈ 2 (新平衡公式)
+        if (ex.energy)  score += ex.energy * 2;         // 每點能量 ≈ 2 (新平衡公式)
+        if (ex.reflect) score += ex.reflect * 1;        // 反傷 ≈ 1
     } else if (w.type === 'skill') {
         // 技能的主數值就是效果本身，不再疊加
     } else if (w.type === 'power') {
@@ -428,7 +428,7 @@ function calcPowerScore(w) {
 const RARITY_ORDER = { common: 0, rare: 1, epic: 2, legendary: 3 };
 const RARITY_LABEL = { common: '普通', rare: '稀有', epic: '史詩', legendary: '傳說' };
 // 同類型、同費用下，每升一級稀有度的預期強度增幅
-const RARITY_STEP_MIN = { attack: 2, defend: 2, skill: 0.5, power: 1 };
+const RARITY_STEP_MIN = { attack: 1, defend: 1, skill: 0, power: 0 };
 
 function runBalanceCheck() {
     const allCards = getAllWords();
