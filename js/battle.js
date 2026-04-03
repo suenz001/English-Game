@@ -272,16 +272,15 @@ async function showQuiz(playedCard, handIndex) {
     phaseEl.textContent = '📢 第一關：聽發音，選出正確的拼字！';
     phaseEl.className = 'quiz-phase phase1';
 
-    // 產生 6 個拼字選項（1正確 + 5語音混淆）
-    const spellingOptions = generateQuizOptions(quizCard.en, 6);
+    // 產生 8 個拼字選項（1正確 + 7語音混淆）
+    const spellingOptions = generateQuizOptions(quizCard.en, 8);
 
     const isPhrase = quizCard.en.includes(' ');
-    const poolHint1 = isPoolMode ? `<div class="quiz-pool-hint">📚 題庫模式 — 出牌效果：${playedCard.emoji} ${playedCard.en}</div>` : '';
-    questionEl.innerHTML = `<span class="quiz-listen-icon">🔊</span><br>仔細聽，選出正確的${isPhrase ? '片語' : '單字'}！${poolHint1}`;
+    questionEl.innerHTML = `<span class="quiz-listen-icon">🔊</span><br>仔細聽，選出正確的${isPhrase ? '片語' : '單字'}！`;
     optionsEl.innerHTML = spellingOptions.map((opt) =>
         `<button class="quiz-option spelling-opt" data-value="${opt}">${opt}</button>`
     ).join('');
-    optionsEl.className = `quiz-options-grid six-options${isPhrase ? ' phrase-options' : ''}`;
+    optionsEl.className = `quiz-options-grid eight-options${isPhrase ? ' phrase-options' : ''}`;
 
     // 播放語音
     speakBtn.classList.remove('hidden');
@@ -367,18 +366,16 @@ async function showMeaningQuiz(quizCard, playedCard, handIndex, quizEl) {
     phaseEl.className = 'quiz-phase phase2';
     speakBtn.classList.add('hidden');
 
-    // 產生 4 個中文選項（1正確 + 3錯誤）
+    // 產生 6 個中文選項（1正確 + 5錯誤）
     const allCards = getAllWordCards().filter(w => w.id !== quizCard.id);
-    const wrongMeanings = shuffleArray(allCards).slice(0, 3).map(w => w.zh);
+    const wrongMeanings = shuffleArray(allCards).slice(0, 5).map(w => w.zh);
     const meaningOptions = shuffleArray([quizCard.zh, ...wrongMeanings]);
 
-    const isPoolMode = quizCard.id !== playedCard.id;
-    const poolHint2 = isPoolMode ? `<div class="quiz-pool-hint">📚 題庫模式 — 出牌效果：${playedCard.emoji} ${playedCard.en}</div>` : '';
-    questionEl.innerHTML = `<span class="quiz-word">${quizCard.en}</span> ${quizCard.emoji}<br>這個單字是什麼意思？${poolHint2}`;
+    questionEl.innerHTML = `<span class="quiz-word">${quizCard.en}</span> ${quizCard.emoji}<br>這個單字是什麼意思？`;
     optionsEl.innerHTML = meaningOptions.map((opt) =>
         `<button class="quiz-option meaning-opt" data-value="${opt}">${opt}</button>`
     ).join('');
-    optionsEl.className = 'quiz-options-grid four-options';
+    optionsEl.className = 'quiz-options-grid six-options';
 
     // 計時
     let timeLeft = GAME_CONSTANTS.QUIZ_TIME_LIMIT;

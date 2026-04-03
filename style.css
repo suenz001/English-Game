@@ -1252,7 +1252,8 @@ body {
 .quiz-phase.defense-phase { background: rgba(231,76,60,0.25); color: #e74c3c; }
 .quiz-speak-btn { display: inline-block; padding: 8px 20px; border: 2px solid rgba(52,152,219,0.4); border-radius: 20px; background: rgba(52,152,219,0.15); color: #5dade2; cursor: pointer; font-family: inherit; font-size: 1em; font-weight: 700; margin-bottom: 10px; transition: all 0.2s; }
 .quiz-speak-btn:hover { background: rgba(52,152,219,0.3); border-color: #3498db; }
-.quiz-options-grid.six-options { grid-template-columns: 1fr 1fr 1fr; }
+.quiz-options-grid.eight-options { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.quiz-options-grid.six-options  { grid-template-columns: 1fr 1fr 1fr; }
 .quiz-options-grid.four-options { grid-template-columns: 1fr 1fr; }
 /* 片語模式：2欄（每個按鈕更寬）、字縮小、允許換行 */
 .quiz-options-grid.phrase-options { grid-template-columns: 1fr 1fr; }
@@ -1425,7 +1426,8 @@ body {
 @media (max-width: 480px) {
     .de-grid { grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); }
     .de-card .de-art { width: 45px; height: 32px; }
-    .quiz-options-grid.six-options { grid-template-columns: 1fr 1fr; }
+    .quiz-options-grid.eight-options { grid-template-columns: 1fr 1fr; }
+    .quiz-options-grid.six-options  { grid-template-columns: 1fr 1fr; }
     .quiz-options-grid.phrase-options { grid-template-columns: 1fr; }
 }
 

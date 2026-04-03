@@ -180,6 +180,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // 清除卡冊
+    document.getElementById('reset-collection-btn').addEventListener('click', () => {
+        const confirmed = confirm('⚠️ 確定要清除所有已獲得的卡片嗎？\n\n這將會清除：\n• 所有收集到的卡片\n• 牌組配置\n• 當前冒險存檔\n\n此操作無法復原！');
+        if (!confirmed) return;
+        const confirmed2 = confirm('🗑️ 再次確認：真的要重置一切嗎？');
+        if (!confirmed2) return;
+
+        // 清除所有遊戲進度相關資料
+        const keysToReset = [
+            'vocabSpire_playerCollection',
+            'vocabSpire_playerDeckConfig',
+            'vocabSpire_savedRun',
+        ];
+        keysToReset.forEach(k => localStorage.removeItem(k));
+        cloudSet('vocabSpire_playerCollection', 'playerCollection', []);
+        cloudSet('vocabSpire_playerDeckConfig', 'playerDeckConfig', []);
+        cloudSet('vocabSpire_savedRun', 'savedRun', null);
+        alert('✅ 卡冊已清除！下次開始遊戲將重新收集卡片。');
+    });
+
     document.getElementById('logout-btn').addEventListener('click', () => { dashboard.classList.add('hidden'); pwdScreen.classList.remove('hidden'); pwdInput.value = ''; });
     document.getElementById('change-pwd-btn').addEventListener('click', () => {
         const p = prompt('請輸入新密碼（4-10位）：');
