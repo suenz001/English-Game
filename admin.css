@@ -96,16 +96,32 @@ body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135d
 
 /* ===== Word List ===== */
 .list-section { background: rgba(255,255,255,0.05); border: 1px solid rgba(155,89,182,0.2); border-radius: 18px; padding: 25px; }
-.list-section h2 { font-size: 1.2em; color: #f1c40f; margin-bottom: 15px; }
+.list-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 8px; }
+.list-section-header h2 { font-size: 1.2em; color: #f1c40f; margin: 0; }
 .empty-state { text-align: center; padding: 30px; color: #7a6b8a; }
 .word-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(0,0,0,0.2); border-radius: 12px; margin-bottom: 8px; border: 1px solid rgba(155,89,182,0.1); }
-.word-item .word-emoji { font-size: 1.5em; }
-.word-item .word-info { flex: 1; }
+.word-item .word-emoji { font-size: 1.5em; flex-shrink: 0; }
+.word-item .word-info { flex: 1; min-width: 0; }
 .word-item .word-en { font-weight: 700; color: #f1c40f; }
 .word-item .word-zh { color: #a78bba; font-size: 0.85em; }
-.word-item .word-meta { font-size: 0.75em; color: #7a6b8a; }
-.word-item .word-actions { display: flex; gap: 6px; }
+.word-item .word-rarity-badge { font-size: 0.75em; font-weight: 700; }
+.word-item .word-effect { font-size: 0.78em; color: #c9a5e0; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.word-item .word-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .word-item .word-actions button { padding: 6px 12px; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; background: transparent; color: #c9a5e0; cursor: pointer; font-size: 0.8em; font-family: inherit; transition: all 0.2s; }
+
+/* ===== 平衡性檢查 ===== */
+.balance-btn { padding: 8px 18px; border: 2px solid rgba(241,196,15,0.4); border-radius: 20px; background: rgba(241,196,15,0.1); color: #f1c40f; cursor: pointer; font-family: inherit; font-size: 0.9em; font-weight: 700; transition: all 0.2s; }
+.balance-btn:hover { background: rgba(241,196,15,0.25); border-color: #f1c40f; }
+.balance-result { background: rgba(0,0,0,0.3); border: 1px solid rgba(155,89,182,0.3); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+.balance-ok { color: #2ecc71; font-weight: 700; text-align: center; font-size: 1em; padding: 8px 0; }
+.balance-summary { color: #f1c40f; font-size: 0.9em; margin-bottom: 12px; font-weight: 700; }
+.balance-issue { padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; }
+.balance-issue.error { background: rgba(231,76,60,0.15); border: 1px solid rgba(231,76,60,0.4); }
+.balance-issue.warn  { background: rgba(241,196,15,0.1); border: 1px solid rgba(241,196,15,0.3); }
+.balance-issue-title { font-weight: 700; font-size: 0.9em; margin-bottom: 4px; }
+.balance-issue.error .balance-issue-title { color: #e74c3c; }
+.balance-issue.warn  .balance-issue-title { color: #f1c40f; }
+.balance-issue-detail { font-size: 0.8em; color: #a78bba; line-height: 1.5; }
 .word-item .word-actions .delete-btn:hover { background: rgba(231,76,60,0.2); color: #e74c3c; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

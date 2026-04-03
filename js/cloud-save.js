@@ -38,8 +38,38 @@ function applyCloudToLocal(data) {
 onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if (user) {
+        // 登入前先快照本地自訂單字（可能是管理員在未登入狀態下新增的）
+        let localWordsBefore = null, localSimilarBefore = null;
+        try { localWordsBefore  = JSON.parse(localStorage.getItem('vocabSpire_customWords')  || 'null'); } catch {}
+        try { localSimilarBefore = JSON.parse(localStorage.getItem('vocabSpire_customSimilar') || 'null'); } catch {}
+
         await loadCloudData();
         if (cloudData) applyCloudToLocal(cloudData);
+
+        // 合併本地自訂單字到雲端，避免管理員離線新增的字被雲端覆蓋
+        if (Array.isArray(localWordsBefore) && localWordsBefore.length > 0) {
+            const cloudWords = (cloudData && cloudData.customWords) || [];
+            const cloudIds = new Set(cloudWords.map(c => c.id));
+            const onlyLocal = localWordsBefore.filter(w => !cloudIds.has(w.id));
+            if (onlyLocal.length > 0) {
+                const merged = [...cloudWords, ...onlyLocal];
+                localStorage.setItem('vocabSpire_customWords', JSON.stringify(merged));
+                await saveCloudData('customWords', merged);
+                if (cloudData) cloudData.customWords = merged;
+                console.log(`☁️ 合併 ${onlyLocal.length} 個本地自訂單字到雲端`);
+            }
+        }
+        if (localSimilarBefore && typeof localSimilarBefore === 'object') {
+            const cloudSimilar = (cloudData && cloudData.customSimilar) || {};
+            const hasNew = Object.keys(localSimilarBefore).some(k => !(k in cloudSimilar));
+            if (hasNew) {
+                const merged = { ...localSimilarBefore, ...cloudSimilar }; // 雲端優先
+                localStorage.setItem('vocabSpire_customSimilar', JSON.stringify(merged));
+                await saveCloudData('customSimilar', merged);
+                if (cloudData) cloudData.customSimilar = merged;
+            }
+        }
+
         console.log('☁️ 已載入雲端資料並同步至本地');
     } else {
         cloudData = null;

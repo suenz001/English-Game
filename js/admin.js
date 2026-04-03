@@ -374,7 +374,124 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // ===== 平衡性檢查 =====
+    document.getElementById('balance-check-btn').addEventListener('click', runBalanceCheck);
 });
+
+// ===== 平衡性檢查 =====
+// 計算卡牌「有效強度分」（已扣除附加效果的基礎換算）
+function calcPowerScore(w) {
+    let score = w.value;
+    const ex = w.extra || {};
+    if (w.type === 'attack') {
+        if (ex.hits)       score = score * 2;          // 二連擊實際傷害 x2
+        if (ex.aoe)        score = score * 1.5;        // 全體攻擊加值
+        if (ex.poison)     score += ex.poison * 1.5;   // 每層毒 ≈ 1.5
+        if (ex.vulnerable) score += ex.vulnerable * 2; // 易傷每回合 ≈ 2
+        if (ex.weak)       score += ex.weak * 2;       // 虛弱每回合 ≈ 2
+    } else if (w.type === 'defend') {
+        if (ex.draw)    score += ex.draw * 3;           // 每張牌 ≈ 3
+        if (ex.energy)  score += ex.energy * 3;         // 每點能量 ≈ 3
+        if (ex.reflect) score += ex.reflect * (ex.reflectTurns || 2);
+    } else if (w.type === 'skill') {
+        // 技能的主數值就是效果本身，不再疊加
+    } else if (w.type === 'power') {
+        // 能力牌本質上是持久效果，直接用 value
+    }
+    return Math.round(score * 10) / 10;
+}
+
+// 稀有度順序
+const RARITY_ORDER = { common: 0, rare: 1, epic: 2, legendary: 3 };
+const RARITY_LABEL = { common: '普通', rare: '稀有', epic: '史詩', legendary: '傳說' };
+// 同類型、同費用下，每升一級稀有度的預期強度增幅
+const RARITY_STEP_MIN = { attack: 2, defend: 2, skill: 0.5, power: 1 };
+
+function runBalanceCheck() {
+    const allCards = getAllWords();
+    const resultEl = document.getElementById('balance-result');
+    const issues = [];
+
+    // 按 type + cost 分組
+    const groups = {};
+    for (const c of allCards) {
+        const key = `${c.type}__${c.cost}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(c);
+    }
+
+    const typeLabel = { attack:'⚔️攻擊', defend:'🛡️防禦', skill:'✨技能', power:'💜能力' };
+
+    for (const [key, cards] of Object.entries(groups)) {
+        if (cards.length < 2) continue;
+        const [type, costStr] = key.split('__');
+        const cost = parseInt(costStr);
+        const sorted = [...cards].sort((a, b) => RARITY_ORDER[a.rarity||'common'] - RARITY_ORDER[b.rarity||'common']);
+
+        // 按稀有度分桶
+        const byRarity = {};
+        for (const c of sorted) {
+            const r = c.rarity || 'common';
+            if (!byRarity[r]) byRarity[r] = [];
+            byRarity[r].push(c);
+        }
+
+        // ① 同稀有度、同類型、同費用的牌強度差異過大
+        for (const [rarity, rarityCards] of Object.entries(byRarity)) {
+            if (rarityCards.length < 2) continue;
+            const scores = rarityCards.map(c => ({ c, s: calcPowerScore(c) }));
+            const maxS = Math.max(...scores.map(x => x.s));
+            const minS = Math.min(...scores.map(x => x.s));
+            if (maxS > 0 && (maxS - minS) / maxS > 0.4) {
+                const rc = RARITY_CONFIG[rarity] || RARITY_CONFIG.common;
+                issues.push({
+                    level: 'warn',
+                    msg: `【${typeLabel[type]} ⚡${cost} ${RARITY_LABEL[rarity]}】同稀有度強度差異過大`,
+                    detail: scores.map(x => `${x.c.emoji}${x.c.en}(分數${x.s})`).join(' vs '),
+                    color: rc.color,
+                });
+            }
+        }
+
+        // ② 低稀有度強度 ≥ 高稀有度強度（稀有度倒掛）
+        const rarityKeys = Object.keys(byRarity).sort((a, b) => RARITY_ORDER[a] - RARITY_ORDER[b]);
+        for (let i = 0; i < rarityKeys.length - 1; i++) {
+            const lowerR = rarityKeys[i], higherR = rarityKeys[i + 1];
+            const lowerMax = Math.max(...byRarity[lowerR].map(c => calcPowerScore(c)));
+            const higherMin = Math.min(...byRarity[higherR].map(c => calcPowerScore(c)));
+            const minStep = RARITY_STEP_MIN[type] || 1;
+            if (higherMin < lowerMax + minStep) {
+                issues.push({
+                    level: 'error',
+                    msg: `【${typeLabel[type]} ⚡${cost}】稀有度倒掛：${RARITY_LABEL[lowerR]}牌比${RARITY_LABEL[higherR]}牌更強`,
+                    detail: `${RARITY_LABEL[lowerR]}最強=${lowerMax}分 vs ${RARITY_LABEL[higherR]}最弱=${higherMin}分（應至少高${minStep}分）`,
+                    color: '#e74c3c',
+                });
+            }
+        }
+    }
+
+    resultEl.classList.remove('hidden');
+    if (issues.length === 0) {
+        resultEl.innerHTML = `<div class="balance-ok">✅ 恭喜！所有卡牌平衡性良好，未發現明顯問題。</div>`;
+        return;
+    }
+
+    // 按類型+費用分組顯示
+    const errorIssues = issues.filter(x => x.level === 'error');
+    const warnIssues  = issues.filter(x => x.level === 'warn');
+
+    let html = `<div class="balance-summary">⚖️ 發現 <b>${errorIssues.length}</b> 個嚴重問題、<b>${warnIssues.length}</b> 個警告</div>`;
+    for (const iss of [...errorIssues, ...warnIssues]) {
+        const icon = iss.level === 'error' ? '🔴' : '🟡';
+        html += `<div class="balance-issue ${iss.level}">
+            <div class="balance-issue-title">${icon} ${iss.msg}</div>
+            <div class="balance-issue-detail">${iss.detail}</div>
+        </div>`;
+    }
+    resultEl.innerHTML = html;
+}
 
 // ===== Render Card Pool =====
 function renderCardPool() {
@@ -454,27 +571,57 @@ function renderCardPool() {
     });
 }
 
+// ===== 卡牌完整效果描述 =====
+function getCardEffectSummary(w) {
+    const typeLabel = { attack:'⚔️攻擊', defend:'🛡️防禦', skill:'✨技能', power:'💜能力' };
+    const base = `${typeLabel[w.type]||w.type} ⚡${w.cost}`;
+    let effect = '';
+    if (w.type === 'attack') {
+        effect = `傷害 ${w.value}`;
+        if (w.extra?.poison)     effect += ` + 中毒${w.extra.poison}層`;
+        if (w.extra?.hits)       effect += ` × 2連擊`;
+        if (w.extra?.aoe)        effect += ` 全體`;
+        if (w.extra?.vulnerable) effect += ` + 易傷${w.extra.vulnerable}回`;
+        if (w.extra?.weak)       effect += ` + 虛弱${w.extra.weak}回`;
+    } else if (w.type === 'defend') {
+        effect = `護甲 ${w.value}`;
+        if (w.extra?.draw)    effect += ` + 抽${w.extra.draw}張`;
+        if (w.extra?.energy)  effect += ` + 能量+${w.extra.energy}`;
+        if (w.extra?.reflect) effect += ` + 反傷${w.extra.reflect}(${w.extra.reflectTurns||2}回)`;
+    } else if (w.type === 'skill') {
+        if (w.extra?.draw && w.extra?.energy) effect = `能量+${w.value} 抽${w.extra.bonusDraw||1}張`;
+        else if (w.extra?.draw)   effect = `抽 ${w.value} 張`;
+        else if (w.extra?.energy) effect = `能量 +${w.value}`;
+        else                      effect = `數值 ${w.value}`;
+    } else if (w.type === 'power') {
+        if (w.extra?.permAtk)    effect = `攻擊力 +${w.value}（永久）`;
+        else if (w.extra?.thorns)     effect = `荊棘反傷 ${w.value}`;
+        else if (w.extra?.blockRegen) effect = `每回合護甲 +${w.value}`;
+        else                          effect = `數值 ${w.value}`;
+    }
+    return `${base} | ${effect}`;
+}
+
 // ===== Render Word List =====
 function renderWordList() {
     const words = getCustomWords();
     const container = document.getElementById('custom-words-list');
     const emptyState = document.getElementById('empty-state');
-    const typeLabel = { attack:'⚔️攻擊', defend:'🛡️防禦', skill:'✨技能', power:'💜能力' };
 
     if (words.length === 0) { container.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
     emptyState.classList.add('hidden');
 
-    // 最新的放最上面
     const reversed = [...words].reverse();
     container.innerHTML = reversed.map(w => {
         const rarity = w.rarity || 'common';
         const rc = RARITY_CONFIG[rarity] || RARITY_CONFIG.common;
+        const effect = getCardEffectSummary(w);
         return `
         <div class="word-item" style="border-left:3px solid ${rc.color}">
             <span class="word-emoji">${w.emoji}</span>
             <div class="word-info">
-                <span class="word-en">${w.en}</span> <span class="word-zh">${w.zh}</span>
-                <div class="word-meta">${typeLabel[w.type]||w.type} | ⚡${w.cost} | 數值${w.value} | <span style="color:${rc.color}">${rc.label}</span></div>
+                <div><span class="word-en">${w.en}</span> <span class="word-zh">${w.zh}</span> <span class="word-rarity-badge" style="color:${rc.color}">【${rc.label}】</span></div>
+                <div class="word-effect">${effect}</div>
             </div>
             <div class="word-actions">
                 <button onclick="window.showCardDetail('${w.id}')">🔍</button>
