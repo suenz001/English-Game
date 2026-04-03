@@ -597,13 +597,14 @@ function renderCardPool() {
         const rarity = card.rarity || 'common';
         const rarityConf = RARITY_CONFIG[rarity] || RARITY_CONFIG.common;
         const rarityLabel = rarityConf.label;
+        const powerScore = calcPowerScore(card);
         return `
             <div class="pool-card ${isActive ? '' : 'inactive'}" style="border-left: 3px solid ${rarityConf.color}">
                 <div class="pool-toggle"><input type="checkbox" ${isActive ? 'checked' : ''} data-id="${card.id}"></div>
                 <div class="pool-preview">${artHtml}</div>
                 <div class="pool-info">
                     <span class="pool-en">${card.en} <button class="admin-info-btn" data-id="${card.id}" style="border:none;background:none;cursor:pointer;font-size:16px;" title="檢視卡片資訊">🔍</button> <button class="admin-edit-btn" data-id="${card.id}" style="border:none;background:none;cursor:pointer;font-size:16px;" title="編輯卡片">✏️</button></span><span class="pool-zh">${card.zh}</span>
-                    <div class="pool-meta">${typeLabel[card.type]||''} ${card.desc.replace('{v}',card.value)} | ⚡${card.cost} | <span style="color:${rarityConf.color}">${rarityLabel}</span></div>
+                    <div class="pool-meta">${typeLabel[card.type]||''} ${card.desc.replace('{v}',card.value)} | ⚡${card.cost} | <span style="color:${rarityConf.color}">${rarityLabel}</span> | ⚖️ ${powerScore}分</div>
                 </div>
                 <div class="pool-img-actions">
                     ${hasImage ? '<span class="img-indicator">📷</span>' : ''}

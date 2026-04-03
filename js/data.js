@@ -19,6 +19,9 @@ export const WORD_CARDS = [
     // ============================
     //   特定考題單字 (放在最上層)
     // ============================
+    { id: 'helicopter', en: 'helicopter', zh: '直升機', difficulty: 3, rarity: 'legendary',
+      type: 'attack', cost: 2, value: 8, emoji: '🚁',
+      desc: '空中掃射，每次造成 {v} 點傷害，共攻擊兩次', extra: { hits: 2 } },
     { id: 'sleep', en: 'sleep', zh: '睡覺', difficulty: 1, rarity: 'common', type: 'skill', cost: 0, value: 1, emoji: '😴', desc: '安穩入睡，獲得 {v} 點能量', extra: { energy: true } },
     { id: 'trying', en: 'trying', zh: '嘗試', difficulty: 1, rarity: 'common', type: 'skill', cost: 1, value: 2, emoji: '💦', desc: '努力嘗試，抽 {v} 張牌', extra: { draw: true } },
     { id: 'quiet', en: 'quiet', zh: '安靜的', difficulty: 1, rarity: 'epic', type: 'power', cost: 1, value: 3, emoji: '🤫', desc: '保持安靜，受擊反彈 {v} 傷害', extra: { thorns: true } },
@@ -364,9 +367,6 @@ export const WORD_CARDS = [
     { id: 'guardian', en: 'guardian', zh: '守護者', difficulty: 3, rarity: 'epic',
       type: 'power', cost: 1, value: 3, emoji: '🛡️',
       desc: '守護荊棘，受擊反彈 {v} 傷害', extra: { thorns: true } },
-    { id: 'helicopter', en: 'helicopter', zh: '直升機', difficulty: 3, rarity: 'legendary',
-      type: 'attack', cost: 2, value: 14, emoji: '🚁',
-      desc: '空中掃射，每次造成 {v} 點傷害，共攻擊兩次', extra: { hits: 2 } },
 ];
 
 // ===== 相似拼字庫（用於出題干擾選項）=====
