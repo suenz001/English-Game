@@ -323,7 +323,7 @@ export const WORD_CARDS = [
     { id: 'helmet', en: 'helmet', zh: '頭盔', difficulty: 3, rarity: 'epic',
       type: 'defend', cost: 1, value: 7, emoji: '⛑️',
       desc: '戰盔防禦，獲得 {v} 點護甲' },
-    { id: 'umbrella', en: 'umbrella', zh: '雨伞', difficulty: 3, rarity: 'epic',
+    { id: 'umbrella', en: 'umbrella', zh: '雨傘', difficulty: 3, rarity: 'epic',
       type: 'defend', cost: 1, value: 5, emoji: '☂️',
       desc: '雨傘格擋，獲得 {v} 點護甲並獲得 1 點能量', extra: { energy: 1 } },
 
