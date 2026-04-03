@@ -27,9 +27,22 @@ function clearAllLocalData() {
 function applyCloudToLocal(data) {
     ALL_KEYS.forEach(([lk, fk]) => {
         if (data[fk] !== undefined) {
-            localStorage.setItem(lk, JSON.stringify(data[fk]));
+            if (data[fk] === null) {
+                localStorage.removeItem(lk);
+            } else {
+                localStorage.setItem(lk, JSON.stringify(data[fk]));
+            }
         } else {
-            localStorage.removeItem(lk); // 雲端沒有的也清掉，避免殘留前帳號資料
+            // 如果雲端沒有該欄位(undefined)，表示未曾上傳或因網路中斷/換頁未能寫入。
+            // 這時候檢查本地是否有值，如果有，就主動推上雲端，而不是刪除本地！
+            const localRaw = localStorage.getItem(lk);
+            if (localRaw) {
+                try {
+                    console.log(`☁️ 發現未同步的本地存檔 [${fk}]，正推送至雲端...`);
+                    const localVal = JSON.parse(localRaw);
+                    saveCloudData(fk, localVal);
+                } catch (e) {}
+            }
         }
     });
 }
