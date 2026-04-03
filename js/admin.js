@@ -185,9 +185,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const typeSelect = document.getElementById('word-type');
     const extraSelect = document.getElementById('word-extra');
     const raritySelect = document.getElementById('word-rarity');
+    const costSelect = document.getElementById('word-cost');
+    
     typeSelect.addEventListener('change', updateExtra);
     extraSelect.addEventListener('change', updateExtraSubGroups);
     raritySelect.addEventListener('change', updateRarityGuide);
+
+    function autoUpdateValue() {
+        const type = typeSelect.value;
+        const rarity = raritySelect.value;
+        const cost = parseInt(costSelect.value);
+        const baseStats = {
+            attack: { common: [2, 5, 9, 12], rare: [3, 6, 10, 14], epic: [4, 7, 12, 16], legendary: [5, 8, 14, 18] },
+            defend: { common: [2, 5, 9, 12], rare: [3, 6, 10, 14], epic: [4, 7, 12, 16], legendary: [5, 8, 14, 18] },
+            skill:  { common: [1, 2, 3, 4], rare: [1, 2, 4, 5], epic: [2, 3, 5, 6], legendary: [3, 4, 6, 8] },
+            power:  { common: [1, 2, 3, 4], rare: [1, 2, 4, 5], epic: [2, 3, 5, 6], legendary: [3, 4, 6, 8] }
+        };
+        if (baseStats[type] && baseStats[type][rarity] && baseStats[type][rarity][cost] !== undefined) {
+            document.getElementById('word-value').value = baseStats[type][rarity][cost];
+        }
+    }
+    
+    typeSelect.addEventListener('change', autoUpdateValue);
+    raritySelect.addEventListener('change', autoUpdateValue);
+    costSelect.addEventListener('change', autoUpdateValue);
+
     updateExtra();
     updateRarityGuide();
 

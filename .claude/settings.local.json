@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find js:*)",
+      "Bash(powershell -Command \"Get-Process git -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host ''killed any git processes''\")",
+      "Bash(powershell -Command \":*)",
+      "Bash(cmd /c \"dir \"\"H:\\\\我的雲端硬碟\\\\遊戲開發\\\\English Game\\\\.git\\\\index.lock\"\" 2>&1\")",
+      "Bash(cmd /c \"cd /d \"\"H:\\\\我的雲端硬碟\\\\遊戲開發\\\\English Game\"\" && git add index.html js/battle.js main.js style.css && git status\")",
+      "Bash(powershell -Command \"Get-Process | Where-Object {$_Name -match ''git|sh|bash''} | Select-Object Id, Name, CPU | Format-Table\")",
+      "Bash(tasklist)",
+      "Bash(taskkill /F /IM git.exe)",
+      "Bash(exit 0)"
+    ]
+  }
+}
