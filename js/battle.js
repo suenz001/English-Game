@@ -518,30 +518,36 @@ async function executeCard(card, handIndex, correct) {
                 showFloatingNumber(totalDmg, 'enemy');
             } else {
                 if (!target || target.hp <= 0) break;
-                const targetEl = document.querySelector(`.enemy-unit[data-enemy-idx="${targetEnemyIdx}"]`);
-                await animateProjectile(playerEl, targetEl, card.emoji);
 
                 const hits = extra.hits || 1;
-                let totalDmg = 0;
+                
                 for (let i = 0; i < hits; i++) {
-                    // 隨機二連擊：每次隨機選擇一個存活的敵人
                     const alive = aliveEnemies();
                     const hitTarget = hits > 1 && alive.length > 0
                         ? alive[Math.floor(Math.random() * alive.length)]
                         : target;
+                        
+                    const targetEl = document.querySelector(`.enemy-unit[data-enemy-idx="${s.enemies.indexOf(hitTarget)}"]`);
+                    if (targetEl) await animateProjectile(playerEl, targetEl, card.emoji);
+
                     const eVulnMult = hitTarget.buffs.vulnerable > 0 ? 1.5 : 1;
                     let dmg = Math.floor((card.value + strength) * weakMult * eVulnMult);
                     if (hitTarget.block > 0) { const blocked = Math.min(hitTarget.block, dmg); hitTarget.block -= blocked; dmg -= blocked; }
                     hitTarget.hp -= dmg;
-                    totalDmg += dmg;
                     addLog(`  💥 對 ${hitTarget.emoji}${hitTarget.name} 造成 ${dmg} 點傷害`);
                     if (hitTarget.hp <= 0) { sfxEnemyDeath(); addLog(`  💀 ${hitTarget.emoji}${hitTarget.name} 被擊敗了！`); }
+
+                    playAttackFx(targetEl);
+                    showFloatingNumber(dmg, targetEl || 'enemy');
+
+                    if (i < hits - 1) {
+                         renderBattle();
+                         await delay(200);
+                    }
                 }
                 if (extra.poison) { target.buffs.poison += extra.poison; sfxPoison(); addLog(`  🧪 施加 ${extra.poison} 層毒`); }
                 if (extra.vulnerable) { target.buffs.vulnerable += extra.vulnerable; sfxDebuff(); addLog(`  ⚠️ 敵人易傷 ${extra.vulnerable} 回合`); }
                 if (extra.weak) { target.buffs.weak += extra.weak; sfxDebuff(); addLog(`  😵‍💫 敵人虛弱 ${extra.weak} 回合`); }
-                playAttackFx();
-                showFloatingNumber(totalDmg, 'enemy');
             }
             break;
         }
@@ -1278,9 +1284,9 @@ function showFx(emoji, cssClass) {
     setTimeout(() => el.remove(), 800);
 }
 
-function playAttackFx() {
+function playAttackFx(customTargetEl) {
     sfxHit();
-    const targetEl = document.querySelector('.enemy-unit.targeted');
+    const targetEl = customTargetEl || document.querySelector('.enemy-unit.targeted');
     if (targetEl) {
         const rect = targetEl.getBoundingClientRect();
         const el = document.createElement('div');
@@ -1302,11 +1308,26 @@ function showFloatingNumber(value, target, type = 'damage') {
     const fxLayer = document.getElementById('battle-fx');
     if (!fxLayer) return;
     const el = document.createElement('div');
-    el.className = target === 'enemy' ? 'fx-hit-enemy' : 'fx-hit-player';
+    
+    const isElement = typeof target === 'object' && target !== null;
+    const targetType = isElement ? 'enemy' : target;
+    
+    el.className = targetType === 'enemy' ? 'fx-hit-enemy' : 'fx-hit-player';
     if (type === 'block') el.classList.add('fx-block-num');
     if (type === 'heal') el.classList.add('fx-heal-num');
     el.textContent = type === 'damage' ? `-${value}` : type === 'heal' ? `+${value}` : `🛡️${value}`;
     fxLayer.appendChild(el);
+
+    if (isElement) {
+        const rect = target.getBoundingClientRect();
+        const fxRect = fxLayer.getBoundingClientRect();
+        const offsetX = (Math.random() - 0.5) * 40;
+        const offsetY = (Math.random() - 0.5) * 20;
+        
+        el.style.left = (rect.left - fxRect.left + rect.width / 2 + offsetX) + 'px';
+        el.style.top = (rect.top - fxRect.top + offsetY) + 'px';
+    }
+
     setTimeout(() => el.remove(), 800);
 }
 
