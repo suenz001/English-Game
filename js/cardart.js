@@ -116,7 +116,7 @@ const ART_TEMPLATES = {
 };
 
 // 生成 SVG（支援自訂圖片）
-export function getCardArt(wordId) {
+export function getCardArt(wordId, emoji = '') {
     // 優先使用自訂上傳圖片
     try {
         const images = JSON.parse(localStorage.getItem('vocabSpire_cardImages') || '{}');
@@ -127,13 +127,27 @@ export function getCardArt(wordId) {
 
     const art = ART_TEMPLATES[wordId];
     if (!art) {
-        return generateDefaultArt(wordId);
+        // 若無 SVG 模板，嘗試從自訂卡牌取得 emoji（未傳入時自動查詢）
+        if (!emoji) {
+            try {
+                const customWords = JSON.parse(localStorage.getItem('vocabSpire_customWords') || '[]');
+                const card = customWords.find(c => c.id === wordId);
+                if (card?.emoji) emoji = card.emoji;
+            } catch {}
+        }
+        return generateDefaultArt(wordId, emoji);
     }
     return `<svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg">${art}</svg>`;
 }
 
-function generateDefaultArt(wordId) {
-    // 用字母生成簡單的彩色幾何圖案
+function generateDefaultArt(wordId, emoji = '') {
+    if (emoji) {
+        // 用 emoji 作為卡牌圖案
+        return `<svg viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg">
+            <text x="50" y="35" text-anchor="middle" dominant-baseline="middle" font-size="40">${emoji}</text>
+        </svg>`;
+    }
+    // fallback：用字母生成彩色幾何圖案
     const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'];
     const color = colors[wordId.charCodeAt(0) % colors.length];
     const letter = wordId.charAt(0).toUpperCase();
