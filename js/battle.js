@@ -1,4 +1,4 @@
-import { WORD_CARDS, SIMILAR_WORDS, ENEMIES, FLOOR_CONFIG, GAME_CONSTANTS, RARITY_BY_DIFFICULTY, RARITY_CONFIG, getCardRarity, getCardRarityConfig, getAllWordCards, getAllSimilarWords, getActiveWordCards } from './data.js';
+import { WORD_CARDS, SIMILAR_WORDS, ENEMIES, FLOOR_CONFIG, GAME_CONSTANTS, RARITY_BY_DIFFICULTY, RARITY_CONFIG, getCardRarity, getCardRarityConfig, getAllWordCards, getAllSimilarWords, getActiveWordCards, getQuizMode } from './data.js';
 import { getCardArt } from './cardart.js';
 import { speakWord, speakWordSlowly, preloadWords } from './speech.js';
 import { sfxAttack, sfxHit, sfxShield, sfxHeal, sfxCardPlay, sfxCorrect, sfxWrong, sfxVictory, sfxDefeat, sfxEnemyAttack, sfxDefenseQuiz, sfxDraw, sfxShuffle, sfxTurnStart, sfxEndTurn, sfxPoison, sfxPoisonTick, sfxRegenTick, sfxDebuff, sfxEnemyBuff, sfxEnemyDeath, sfxThorns } from './sound.js';
@@ -246,7 +246,7 @@ export function playCard(handIndex) {
 // 第一階段：聽發音 → 6選1 選正確拼字
 // 第二階段：選正確中文意思（4選1）
 
-async function showQuiz(card, handIndex) {
+async function showQuiz(playedCard, handIndex) {
     animating = true;
     const quizEl = document.getElementById('quiz-modal');
     const questionEl = document.getElementById('quiz-question');
@@ -255,6 +255,14 @@ async function showQuiz(card, handIndex) {
     const feedbackEl = document.getElementById('quiz-feedback');
     const phaseEl = document.getElementById('quiz-phase');
     const speakBtn = document.getElementById('quiz-speak-btn');
+
+    // ===== 決定考題卡牌（題庫模式從同稀有度隨機抽）=====
+    let quizCard = playedCard;
+    if (getQuizMode() === 'pool') {
+        const pool = getActiveWordCards().filter(c => c.rarity === playedCard.rarity);
+        if (pool.length > 0) quizCard = pool[Math.floor(Math.random() * pool.length)];
+    }
+    const isPoolMode = quizCard.id !== playedCard.id;
 
     feedbackEl.textContent = '';
     feedbackEl.className = 'quiz-feedback';
@@ -265,19 +273,20 @@ async function showQuiz(card, handIndex) {
     phaseEl.className = 'quiz-phase phase1';
 
     // 產生 6 個拼字選項（1正確 + 5語音混淆）
-    const spellingOptions = generateQuizOptions(card.en, 6);
+    const spellingOptions = generateQuizOptions(quizCard.en, 6);
 
-    const isPhrase = card.en.includes(' ');
-    questionEl.innerHTML = `<span class="quiz-listen-icon">🔊</span><br>仔細聽，選出正確的${isPhrase ? '片語' : '單字'}！`;
-    optionsEl.innerHTML = spellingOptions.map((opt, i) =>
+    const isPhrase = quizCard.en.includes(' ');
+    const poolHint1 = isPoolMode ? `<div class="quiz-pool-hint">📚 題庫模式 — 出牌效果：${playedCard.emoji} ${playedCard.en}</div>` : '';
+    questionEl.innerHTML = `<span class="quiz-listen-icon">🔊</span><br>仔細聽，選出正確的${isPhrase ? '片語' : '單字'}！${poolHint1}`;
+    optionsEl.innerHTML = spellingOptions.map((opt) =>
         `<button class="quiz-option spelling-opt" data-value="${opt}">${opt}</button>`
     ).join('');
     optionsEl.className = `quiz-options-grid six-options${isPhrase ? ' phrase-options' : ''}`;
 
     // 播放語音
     speakBtn.classList.remove('hidden');
-    speakBtn.onclick = () => speakWord(card.en);
-    await speakWord(card.en);
+    speakBtn.onclick = () => speakWord(quizCard.en);
+    await speakWord(quizCard.en);
 
     // 計時
     let timeLeft = GAME_CONSTANTS.QUIZ_TIME_LIMIT;
@@ -290,7 +299,7 @@ async function showQuiz(card, handIndex) {
         if (timeLeft <= 0) {
             clearInterval(quizTimer);
             timerEl.classList.remove('timer-urgent');
-            handleSpellingResult(false, card, handIndex, quizEl);
+            handleSpellingResult(false, quizCard, playedCard, handIndex, quizEl);
         }
     }, 1000);
 
@@ -301,11 +310,11 @@ async function showQuiz(card, handIndex) {
                 clearInterval(quizTimer);
                 timerEl.classList.remove('timer-urgent');
                 const picked = btn.dataset.value;
-                const correct = picked === card.en;
+                const correct = picked === quizCard.en;
 
                 // 高亮答案
                 optionsEl.querySelectorAll('.spelling-opt').forEach(b => {
-                    if (b.dataset.value === card.en) b.classList.add('correct');
+                    if (b.dataset.value === quizCard.en) b.classList.add('correct');
                     else if (b === btn && !correct) b.classList.add('wrong');
                     b.disabled = true;
                 });
@@ -316,35 +325,35 @@ async function showQuiz(card, handIndex) {
     });
 
     const spellingCorrect = await spellingPromise;
-    handleSpellingResult(spellingCorrect, card, handIndex, quizEl);
+    handleSpellingResult(spellingCorrect, quizCard, playedCard, handIndex, quizEl);
 }
 
-async function handleSpellingResult(correct, card, handIndex, quizEl) {
+async function handleSpellingResult(correct, quizCard, playedCard, handIndex, quizEl) {
     const feedbackEl = document.getElementById('quiz-feedback');
     const speakBtn = document.getElementById('quiz-speak-btn');
 
     if (!correct) {
-        feedbackEl.textContent = `❌ 正確拼字是：${card.en}`;
+        feedbackEl.textContent = `❌ 正確拼字是：${quizCard.en}`;
         feedbackEl.className = 'quiz-feedback wrong';
         // 再念一次讓小朋友記住
-        await speakWordSlowly(card.en);
+        await speakWordSlowly(quizCard.en);
         await delay(1000);
         quizEl.classList.add('hidden');
         speakBtn.classList.add('hidden');
         animating = false;
-        executeCard(card, handIndex, false);
+        executeCard(playedCard, handIndex, false);
         return;
     }
 
-    feedbackEl.textContent = `✅ 拼字正確！${card.en}`;
+    feedbackEl.textContent = `✅ 拼字正確！${quizCard.en}`;
     feedbackEl.className = 'quiz-feedback correct';
     await delay(800);
 
     // ===== 第二階段：選中文意思 =====
-    showMeaningQuiz(card, handIndex, quizEl);
+    showMeaningQuiz(quizCard, playedCard, handIndex, quizEl);
 }
 
-async function showMeaningQuiz(card, handIndex, quizEl) {
+async function showMeaningQuiz(quizCard, playedCard, handIndex, quizEl) {
     const questionEl = document.getElementById('quiz-question');
     const optionsEl = document.getElementById('quiz-options');
     const timerEl = document.getElementById('quiz-timer');
@@ -359,12 +368,14 @@ async function showMeaningQuiz(card, handIndex, quizEl) {
     speakBtn.classList.add('hidden');
 
     // 產生 4 個中文選項（1正確 + 3錯誤）
-    const allCards = getAllWordCards().filter(w => w.id !== card.id);
+    const allCards = getAllWordCards().filter(w => w.id !== quizCard.id);
     const wrongMeanings = shuffleArray(allCards).slice(0, 3).map(w => w.zh);
-    const meaningOptions = shuffleArray([card.zh, ...wrongMeanings]);
+    const meaningOptions = shuffleArray([quizCard.zh, ...wrongMeanings]);
 
-    questionEl.innerHTML = `<span class="quiz-word">${card.en}</span> ${card.emoji}<br>這個單字是什麼意思？`;
-    optionsEl.innerHTML = meaningOptions.map((opt, i) =>
+    const isPoolMode = quizCard.id !== playedCard.id;
+    const poolHint2 = isPoolMode ? `<div class="quiz-pool-hint">📚 題庫模式 — 出牌效果：${playedCard.emoji} ${playedCard.en}</div>` : '';
+    questionEl.innerHTML = `<span class="quiz-word">${quizCard.en}</span> ${quizCard.emoji}<br>這個單字是什麼意思？${poolHint2}`;
+    optionsEl.innerHTML = meaningOptions.map((opt) =>
         `<button class="quiz-option meaning-opt" data-value="${opt}">${opt}</button>`
     ).join('');
     optionsEl.className = 'quiz-options-grid four-options';
@@ -380,7 +391,7 @@ async function showMeaningQuiz(card, handIndex, quizEl) {
         if (timeLeft <= 0) {
             clearInterval(quizTimer);
             timerEl.classList.remove('timer-urgent');
-            finishQuiz(false, card, handIndex, quizEl);
+            finishQuiz(false, quizCard, playedCard, handIndex, quizEl);
         }
     }, 1000);
 
@@ -389,33 +400,33 @@ async function showMeaningQuiz(card, handIndex, quizEl) {
             clearInterval(quizTimer);
             timerEl.classList.remove('timer-urgent');
             const picked = btn.dataset.value;
-            const correct = picked === card.zh;
+            const correct = picked === quizCard.zh;
 
             optionsEl.querySelectorAll('.meaning-opt').forEach(b => {
-                if (b.dataset.value === card.zh) b.classList.add('correct');
+                if (b.dataset.value === quizCard.zh) b.classList.add('correct');
                 else if (b === btn && !correct) b.classList.add('wrong');
                 b.disabled = true;
             });
 
-            finishQuiz(correct, card, handIndex, quizEl);
+            finishQuiz(correct, quizCard, playedCard, handIndex, quizEl);
         });
     });
 }
 
-async function finishQuiz(correct, card, handIndex, quizEl) {
+async function finishQuiz(correct, quizCard, playedCard, handIndex, quizEl) {
     const feedbackEl = document.getElementById('quiz-feedback');
     const continueBtn = document.getElementById('quiz-continue-btn');
 
     if (correct) {
         sfxCorrect();
-        feedbackEl.textContent = `✅ 完全正確！${card.en} = ${card.zh}`;
+        feedbackEl.textContent = `✅ 完全正確！${quizCard.en} = ${quizCard.zh}`;
         feedbackEl.className = 'quiz-feedback correct';
         await delay(1200);
     } else {
         sfxWrong();
-        feedbackEl.textContent = `❌ 正確答案：${card.en} = ${card.zh}`;
+        feedbackEl.textContent = `❌ 正確答案：${quizCard.en} = ${quizCard.zh}`;
         feedbackEl.className = 'quiz-feedback wrong';
-        await speakWord(card.en);
+        await speakWord(quizCard.en);
         await new Promise(resolve => {
             continueBtn.classList.remove('hidden');
             continueBtn.onclick = () => { continueBtn.classList.add('hidden'); resolve(); };
@@ -425,7 +436,7 @@ async function finishQuiz(correct, card, handIndex, quizEl) {
     quizEl.classList.add('hidden');
     document.getElementById('quiz-speak-btn').classList.add('hidden');
     animating = false;
-    executeCard(card, handIndex, correct);
+    executeCard(playedCard, handIndex, correct);
 }
 
 // ===== 執行卡牌效果 =====

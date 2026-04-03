@@ -658,3 +658,13 @@ export function savePlayerDeckConfig(deck) {
     cloudSet('vocabSpire_playerDeckConfig', 'playerDeckConfig', deck);
 }
 
+// ===== 問答出題模式 =====
+// 'card'  → 依出牌卡牌出題（原本模式）
+// 'pool'  → 從同稀有度啟用卡牌隨機出題（題庫模式）
+export function getQuizMode() {
+    return localStorage.getItem('vocabSpire_quizMode') || 'card';
+}
+export function saveQuizMode(mode) {
+    localStorage.setItem('vocabSpire_quizMode', mode);
+}
+

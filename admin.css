@@ -124,6 +124,23 @@ body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135d
 .balance-issue-detail { font-size: 0.8em; color: #a78bba; line-height: 1.5; }
 .word-item .word-actions .delete-btn:hover { background: rgba(231,76,60,0.2); color: #e74c3c; }
 
+/* ===== 問答出題模式切換 ===== */
+.quiz-mode-box { background: rgba(255,255,255,0.04); border: 1px solid rgba(155,89,182,0.25); border-radius: 16px; padding: 16px 18px; margin-bottom: 18px; }
+.quiz-mode-title { font-size: 0.85em; font-weight: 700; color: #a78bba; margin-bottom: 12px; letter-spacing: 0.05em; }
+.quiz-mode-row { display: flex; gap: 10px; }
+.quiz-mode-option { flex: 1; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 2px solid rgba(155,89,182,0.2); border-radius: 14px; cursor: pointer; transition: all 0.2s; background: rgba(0,0,0,0.15); user-select: none; }
+.quiz-mode-option input[type="radio"] { display: none; }
+.quiz-mode-option:hover { border-color: rgba(155,89,182,0.5); background: rgba(155,89,182,0.1); }
+.quiz-mode-option.selected { border-color: #9b59b6; background: rgba(155,89,182,0.2); box-shadow: 0 0 12px rgba(155,89,182,0.25); }
+.quiz-mode-option .mode-icon { font-size: 1.8em; flex-shrink: 0; }
+.quiz-mode-option .mode-name { font-weight: 700; font-size: 0.9em; color: #e0e0e0; }
+.quiz-mode-option.selected .mode-name { color: #c9a5e0; }
+.quiz-mode-option .mode-desc { font-size: 0.72em; color: #7a6b8a; margin-top: 2px; line-height: 1.4; }
+.quiz-mode-option.selected .mode-desc { color: #a78bba; }
+
+/* ===== 題庫模式提示（戰鬥問答中）===== */
+.quiz-pool-hint { display: inline-block; margin-top: 8px; padding: 4px 12px; background: rgba(155,89,182,0.2); border: 1px solid rgba(155,89,182,0.4); border-radius: 20px; font-size: 0.78em; color: #c9a5e0; font-weight: 700; }
+
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes shake { 0%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}100%{transform:translateX(0)} }
 

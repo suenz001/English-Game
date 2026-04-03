@@ -41,6 +41,30 @@
         <main class="admin-main">
             <!-- ===== Tab: 卡牌池管理 ===== -->
             <div id="tab-pool" class="tab-content">
+
+                <!-- 問答出題模式 -->
+                <div class="quiz-mode-box">
+                    <div class="quiz-mode-title">🎯 問答出題模式</div>
+                    <div class="quiz-mode-row">
+                        <label class="quiz-mode-option" id="mode-card-label">
+                            <input type="radio" name="quiz-mode" value="card" id="mode-card">
+                            <div class="mode-icon">🃏</div>
+                            <div class="mode-text">
+                                <div class="mode-name">卡牌模式</div>
+                                <div class="mode-desc">依出牌的那張卡牌出題（原本模式）</div>
+                            </div>
+                        </label>
+                        <label class="quiz-mode-option" id="mode-pool-label">
+                            <input type="radio" name="quiz-mode" value="pool" id="mode-pool">
+                            <div class="mode-icon">📚</div>
+                            <div class="mode-text">
+                                <div class="mode-name">題庫模式</div>
+                                <div class="mode-desc">從同稀有度的啟用卡牌中隨機抽題</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="pool-header">
                     <div class="stats-bar">
                         <div class="stat-item"><span class="stat-label">啟用中</span><span id="active-count" class="stat-value">0</span></div>

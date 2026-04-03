@@ -137,13 +137,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const pwdInput = document.getElementById('password-input');
     const pwdError = document.getElementById('password-error');
 
+    // ===== 問答模式初始化 =====
+    function initQuizMode() {
+        const mode = localStorage.getItem('vocabSpire_quizMode') || 'card';
+        const radio = document.querySelector(`input[name="quiz-mode"][value="${mode}"]`);
+        if (radio) radio.checked = true;
+        updateQuizModeLabels(mode);
+    }
+    function updateQuizModeLabels(mode) {
+        document.getElementById('mode-card-label').classList.toggle('selected', mode === 'card');
+        document.getElementById('mode-pool-label').classList.toggle('selected', mode === 'pool');
+    }
+    document.querySelectorAll('input[name="quiz-mode"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            localStorage.setItem('vocabSpire_quizMode', radio.value);
+            updateQuizModeLabels(radio.value);
+        });
+    });
+
     // 解鎖
     document.getElementById('unlock-btn').addEventListener('click', () => {
-        if (pwdInput.value === getPassword()) { 
-            pwdScreen.classList.add('hidden'); 
-            dashboard.classList.remove('hidden'); 
-            renderCardPool(); 
-            renderWordList(); 
+        if (pwdInput.value === getPassword()) {
+            pwdScreen.classList.add('hidden');
+            dashboard.classList.remove('hidden');
+            renderCardPool();
+            renderWordList();
+            initQuizMode();
         } else { 
             pwdError.classList.remove('hidden'); 
             pwdInput.value = ''; 
