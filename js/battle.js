@@ -863,7 +863,12 @@ function handleVictory() {
                 playerHp: s.player.hp, playerMaxHp: s.player.maxHp,
                 goldEarned,
                 deck: [...s.player.deck, ...s.player.hand, ...s.player.discard],
-                buffs: { strength: s.player.buffs.strength, regen: s.player.buffs.regen, thorns: s.player.buffs.thorns, blockRegen: s.player.buffs.blockRegen },
+                buffs: { 
+                    strength: s.player.buffs.strength, // 屬性保留：戰鬥中獲得的永久力量保留
+                    regen: 0, // 清除戰鬥專屬狀態
+                    thorns: 0, // 清除戰鬥專屬狀態
+                    blockRegen: 0 // 清除戰鬥專屬狀態 (修正 hospital 防禦溢出到地圖的問題)
+                },
             });
         }
     }, 600);
