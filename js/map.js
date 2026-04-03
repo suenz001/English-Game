@@ -159,7 +159,7 @@ export function loadSavedRun(battleEndCallback) {
             document.getElementById('map-screen').classList.add('hidden');
             document.getElementById('battle-screen').classList.remove('hidden');
             import('./battle.js').then(b => {
-                b.restoreBattle(save.battleState, onGameOver);
+                b.restoreBattle(save.battleState, (result) => handleBattleResult(result, gameState.currentFloor + 1));
             });
         } else {
             // 如果在戰鬥中退出但沒存到狀態（舊版存檔），強制重新進入該場戰鬥
@@ -595,7 +595,7 @@ function handleBattleResult(result, floor) {
 
         newBtn.addEventListener('click', () => {
             resultModal.classList.add('hidden');
-            showCardReward(gameState.playerDeck, FLOOR_CONFIG[Math.min(floor - 1, FLOOR_CONFIG.length - 1)].vocabDifficulty, (cardId) => {
+            showCardReward(gameState.playerDeck, FLOOR_CONFIG[Math.max(0, Math.min(floor - 1, FLOOR_CONFIG.length - 1))].vocabDifficulty, (cardId) => {
                 if (cardId) {
                     gameState.playerDeck.push(cardId);
                     gameState.newCardIds.push(cardId);
