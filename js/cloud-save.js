@@ -38,6 +38,9 @@ function applyCloudToLocal(data) {
 onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if (user) {
+        // 立即通知 UI 顯示登入帳號，不需要等待後端載入
+        listeners.forEach(fn => fn(user));
+
         // 登入前先快照本地自訂單字（可能是管理員在未登入狀態下新增的）
         let localWordsBefore = null, localSimilarBefore = null;
         try { localWordsBefore  = JSON.parse(localStorage.getItem('vocabSpire_customWords')  || 'null'); } catch {}
@@ -71,11 +74,14 @@ onAuthStateChanged(auth, async (user) => {
         }
 
         console.log('☁️ 已載入雲端資料並同步至本地');
+        
+        // 雲端資料同步完成後，再次通知 listeners 以更新需要最新資料的畫面 (如 admin 勾選狀態)
+        listeners.forEach(fn => fn(user));
     } else {
         cloudData = null;
         clearAllLocalData(); // 登出時清除本地，防止不同帳號資料混用
+        listeners.forEach(fn => fn(user)); // 登出清除後才通知 UI
     }
-    listeners.forEach(fn => fn(user));
 });
 
 export function onUserChange(fn) { listeners.push(fn); }
