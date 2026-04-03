@@ -293,6 +293,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('word-image').value = '';
         showFormImgPreview(null);
     }
+    window.resetFormImage = resetFormImage;
+    window.showFormImgPreview = showFormImgPreview;
 
     document.getElementById('word-form').addEventListener('submit', e => {
         e.preventDefault();
@@ -682,9 +684,9 @@ window.editWord = function(id) {
     document.getElementById('word-flavor').value = w.flavor || '';
 
     // 還原圖片預覽
-    resetFormImage();
+    if (window.resetFormImage) window.resetFormImage();
     const existingImg = getCardImages()[id];
-    if (existingImg) showFormImgPreview(existingImg);
+    if (existingImg && window.showFormImgPreview) window.showFormImgPreview(existingImg);
 
     // 判斷原來的 extra
     const extraEl          = document.getElementById('word-extra');
