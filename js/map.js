@@ -586,21 +586,47 @@ function handleBattleResult(result, floor) {
         gameState.inBattle = false;
         saveRunState();
 
-        if (floor >= gameState.maxFloor) { showGameComplete(); return; }
+        const isBoss = floor >= gameState.maxFloor;
+        const diffIndex = Math.max(0, Math.min(floor - 1, FLOOR_CONFIG.length - 1));
+        const vocabDiff = FLOOR_CONFIG[diffIndex].vocabDifficulty;
 
         const resultModal = document.getElementById('battle-result-modal');
         const continueBtn = resultModal.querySelector('.continue-btn');
         const newBtn = continueBtn.cloneNode(true);
         continueBtn.parentNode.replaceChild(newBtn, continueBtn);
 
+        if (isBoss) {
+            newBtn.addEventListener('click', () => {
+                resultModal.classList.add('hidden');
+                showCardReward(vocabDiff, { isBoss: true }, (cardIds) => {
+                    if (cardIds) {
+                        const ids = Array.isArray(cardIds) ? cardIds : [cardIds];
+                        ids.forEach(cardId => {
+                            gameState.playerDeck.push(cardId);
+                            gameState.newCardIds.push(cardId);
+                            const coll = getPlayerCollection(); coll.push(cardId); savePlayerCollection(coll);
+                            cloudSet('vocabSpire_playerCollection', 'playerCollection', coll);
+                        });
+                        saveRunState();
+                    }
+                    showGameComplete();
+                });
+            });
+            return;
+        }
+
         newBtn.addEventListener('click', () => {
             resultModal.classList.add('hidden');
-            showCardReward(gameState.playerDeck, FLOOR_CONFIG[Math.max(0, Math.min(floor - 1, FLOOR_CONFIG.length - 1))].vocabDifficulty, (cardId) => {
-                if (cardId) {
-                    gameState.playerDeck.push(cardId);
-                    gameState.newCardIds.push(cardId);
-                    const coll = getPlayerCollection(); coll.push(cardId); savePlayerCollection(coll);
-                    cloudSet('vocabSpire_playerCollection', 'playerCollection', coll);
+            showCardReward(vocabDiff, { isBoss: false }, (cardIds) => {
+                if (cardIds) {
+                    const ids = Array.isArray(cardIds) ? cardIds : [cardIds];
+                    ids.forEach(cardId => {
+                        gameState.playerDeck.push(cardId);
+                        gameState.newCardIds.push(cardId);
+                        const coll = getPlayerCollection(); coll.push(cardId); savePlayerCollection(coll);
+                        cloudSet('vocabSpire_playerCollection', 'playerCollection', coll);
+                    });
+                    saveRunState();
                 }
                 showMap();
             });

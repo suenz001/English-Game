@@ -393,7 +393,14 @@ body {
     position: relative;
     cursor: help;
 }
-.enemy-intent-mini .tooltip-text {
+
+.buff-tag {
+    cursor: help;
+    position: relative;
+}
+
+.enemy-intent-mini .tooltip-text,
+.buff-tag .tooltip-text {
     visibility: hidden;
     opacity: 0;
     width: max-content;
@@ -414,8 +421,11 @@ body {
     line-height: 1.4;
     border: 1px solid rgba(255,255,255,0.2);
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    pointer-events: none;
+    transition: opacity 0.2s ease;
 }
-.enemy-intent-mini .tooltip-text::after {
+.enemy-intent-mini .tooltip-text::after,
+.buff-tag .tooltip-text::after {
     content: "";
     position: absolute;
     top: 100%;
@@ -426,7 +436,9 @@ body {
     border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
 }
 .enemy-intent-mini:hover .tooltip-text,
-.enemy-intent-mini:active .tooltip-text {
+.enemy-intent-mini:active .tooltip-text,
+.buff-tag:hover .tooltip-text,
+.buff-tag:active .tooltip-text {
     visibility: visible;
     opacity: 1;
 }
@@ -1816,3 +1828,4 @@ body {
     50% { box-shadow: 0 0 0 8px rgba(231,76,60,0); }
 }
 
+.buff-tag:hover { z-index: 101; }

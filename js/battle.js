@@ -1,4 +1,4 @@
-import { WORD_CARDS, SIMILAR_WORDS, ENEMIES, FLOOR_CONFIG, GAME_CONSTANTS, RARITY_BY_DIFFICULTY, RARITY_CONFIG, getCardRarity, getCardRarityConfig, getAllWordCards, getAllSimilarWords, getActiveWordCards, getQuizMode } from './data.js';
+import { WORD_CARDS, SIMILAR_WORDS, ENEMIES, FLOOR_CONFIG, GAME_CONSTANTS, RARITY_BY_DIFFICULTY, RARITY_CONFIG, getCardRarity, getCardRarityConfig, getAllWordCards, getAllSimilarWords, getActiveWordCards, getQuizMode, getPlayerCollection } from './data.js';
 import { getCardArt } from './cardart.js';
 import { speakWord, speakWordSlowly, preloadWords } from './speech.js';
 import { sfxAttack, sfxHit, sfxShield, sfxHeal, sfxCardPlay, sfxCorrect, sfxWrong, sfxVictory, sfxDefeat, sfxEnemyAttack, sfxDefenseQuiz, sfxDraw, sfxShuffle, sfxTurnStart, sfxEndTurn, sfxPoison, sfxPoisonTick, sfxRegenTick, sfxDebuff, sfxEnemyBuff, sfxEnemyDeath, sfxThorns } from './sound.js';
@@ -953,11 +953,14 @@ export function renderBattle() {
     const buffsEl = document.getElementById('player-buffs');
     buffsEl.innerHTML = buffParts.map(([key, val]) => {
         const info = BUFF_INFO[key];
-        return `<span class="buff-tag" data-buff="${key}" data-val="${val}" style="color:${info.color}">${info.emoji}${val}</span>`;
+        return `<span class="buff-tag" data-buff="${key}" data-val="${val}" style="color:${info.color}">
+            ${info.emoji}${val}
+            <div class="tooltip-text" style="width:200px; max-width:200px;">
+                <div style="font-weight:bold; color:${info.color}; font-size:1.1em; margin-bottom:4px;">${info.emoji} ${info.name}</div>
+                <div style="font-size:0.85em; color:#ddd;">${info.desc(val)}</div>
+            </div>
+        </span>`;
     }).join('');
-    buffsEl.querySelectorAll('.buff-tag').forEach(span => {
-        span.addEventListener('click', () => showBuffPopup(span.dataset.buff, parseInt(span.dataset.val)));
-    });
 
     // Enemies - 動態產生多敵人
     const enemyArea = document.querySelector('.enemy-area');
