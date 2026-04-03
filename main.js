@@ -333,7 +333,7 @@ function renderDeckEditor() {
             const card = allCards.find(c => c.id === id); if (!card) return '';
             const rarityKey = d.getCardRarity(card);
             const rarity = d.RARITY_CONFIG[rarityKey];
-            return `<div class="de-card rarity-${rarityKey}" data-id="${id}" data-action="remove" style="border-color:${rarity.color}">
+            return `<div class="de-card rarity-${rarityKey}" data-id="${id}" data-action="remove" style="border-color:${rarity.color}" title="點擊移除">
                 <div class="de-card-top" style="background:${rarity.color}">
                     <div class="de-card-cost">${card.cost}</div>
                     <div class="de-card-name">${card.en}</div>
@@ -343,7 +343,7 @@ function renderDeckEditor() {
                     <span class="de-card-zh">${card.zh}</span><br>
                     ${card.desc.replace('{v}', card.value)}
                 </div>
-                <div class="de-card-footer">${typeLabel[card.type]} x${count} · 點擊移除</div>
+                <div class="de-card-footer">${typeLabel[card.type]} x${count}</div>
                 <button class="card-info-btn" data-id="${id}">🔍</button>
             </div>`;
         }).join('');
