@@ -1,5 +1,6 @@
 // ===== 卡牌 SVG 圖案生成器 =====
 // 為每個單字自動產生風格化的 SVG 卡圖
+import { WORD_CARDS } from './data.js';
 
 const ART_TEMPLATES = {
     // 動物
@@ -129,11 +130,13 @@ export function getCardArt(wordId, emoji = '') {
     if (!art) {
         // 若無 SVG 模板，嘗試從自訂卡牌取得 emoji（未傳入時自動查詢）
         if (!emoji) {
+            let card = null;
             try {
                 const customWords = JSON.parse(localStorage.getItem('vocabSpire_customWords') || '[]');
-                const card = customWords.find(c => c.id === wordId);
-                if (card?.emoji) emoji = card.emoji;
+                card = customWords.find(c => c.id === wordId);
             } catch {}
+            if (!card) card = WORD_CARDS.find(c => c.id === wordId);
+            if (card && card.emoji) emoji = card.emoji;
         }
         return generateDefaultArt(wordId, emoji);
     }
