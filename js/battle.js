@@ -163,6 +163,7 @@ async function startPlayerTurn() {
     
     renderBattle();
     animating = false;
+    saveBattleStateLocally(); // 確保回合開始抽牌動畫結束後，確實進行一次存檔
 }
 
 async function drawCards(count) {
@@ -1428,6 +1429,8 @@ export function saveBattleStateLocally() {
     
     clearTimeout(battleSaveTimeout);
     battleSaveTimeout = setTimeout(() => {
+        // 再次檢查，防止延遲觸發時剛好進入了動畫(抽牌中)而存檔不完整
+        if (!battleState || battleState.ended || animating) return;
         const saveObj = cloudGet('vocabSpire_savedRun', 'savedRun');
         if (saveObj) {
             saveObj.battleState = battleState;
