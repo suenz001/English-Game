@@ -1170,12 +1170,11 @@ function setupCardDrag() {
 }
 
 // ===== 卡牌獎勵 =====
-export function showCardReward(currentDeck, vocabDifficulty, callback) {
+export function showCardReward(vocabDifficulty, options, callback) {
     // 從家長啟用的卡片中挑選獎勵
-    const owned = new Set(currentDeck);
     const activeCards = getActiveWordCards();
-    const available = activeCards.filter(c => c.difficulty <= vocabDifficulty && !owned.has(c.id));
-    const pool = available.length >= 3 ? available : activeCards.filter(c => c.difficulty <= vocabDifficulty);
+    const available = activeCards.filter(c => c.difficulty <= vocabDifficulty);
+    const pool = available.length >= 3 ? available : activeCards;
 
     const choices = shuffleArray([...pool]).slice(0, GAME_CONSTANTS.REWARD_CARD_CHOICES);
 
