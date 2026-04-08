@@ -187,7 +187,7 @@ export const WORD_CARDS = [
       type: 'attack', cost: 0, value: 6, emoji: '🔪',
       desc: '飛刀攻擊，造成 {v} 點傷害' },
     { id: 'angry', en: 'angry', zh: '生氣的', difficulty: 2, rarity: 'rare',
-      type: 'attack', cost: 1, value: 4, emoji: '😡',
+      type: 'attack', cost: 1, value: 3, emoji: '😡',
       desc: '憤怒一擊，造成 {v} 點傷害，並給予 2 回合虛弱', extra: { weak: 2 } },
     { id: 'brave', en: 'brave', zh: '勇敢的', difficulty: 2, rarity: 'rare',
       type: 'attack', cost: 1, value: 8, emoji: '💪',
