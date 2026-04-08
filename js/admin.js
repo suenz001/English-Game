@@ -598,7 +598,7 @@ function renderCardPool() {
         const rarityConf = RARITY_CONFIG[rarity] || RARITY_CONFIG.common;
         const rarityLabel = rarityConf.label;
         const powerScore = calcPowerScore(card);
-        const cardNum = all.findIndex(c => c.id === card.id) + 1;
+        const cardNum = all.length - all.findIndex(c => c.id === card.id);
         return `
             <div class="pool-card ${isActive ? '' : 'inactive'}" style="border-left: 3px solid ${rarityConf.color}">
                 <div class="pool-toggle"><input type="checkbox" ${isActive ? 'checked' : ''} data-id="${card.id}"></div>
