@@ -460,37 +460,54 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ===== 平衡性檢查 =====
-// 計算卡牌「有效強度分」（已扣除附加效果的基礎換算）
+// 計算卡牌「有效強度分」
+// 設計參考殺戮尖塔經濟：1能量≈7分、1抽牌≈6分、1永久力量≈8分
 function calcPowerScore(w) {
-    let score = w.value;
     const ex = w.extra || {};
+    let score = 0;
+
     if (w.type === 'attack') {
-        if (ex.hits)       score = score * 2;          // 二連擊實際傷害 x2
-        if (ex.aoe)        score = score * 1.5;        // 全體攻擊加值
-        if (ex.poison)     score += ex.poison * 1;     // 每層毒 ≈ 1 (新平衡公式)
-        if (ex.vulnerable) score += ex.vulnerable * 1; // 易傷每回合 ≈ 1 (新平衡公式)
-        if (ex.weak)       score += ex.weak * 1;       // 虛弱每回合 ≈ 1 (新平衡公式)
+        const hits = ex.hits || 1;
+        score = w.value * hits;          // 多段傷害直接×次數
+        if (ex.aoe)        score *= 1.8; // 全體：平均打到1.8個敵人
+        if (ex.poison)     score += ex.poison * 3;      // 毒N層：期望 N×2.5 傷，取3保守估計
+        if (ex.vulnerable) score += ex.vulnerable * 5;  // 易傷每回合：讓我方輸出+50%，≈5分/回合
+        if (ex.weak)       score += ex.weak * 3;        // 虛弱每回合：敵攻-25%，≈3分/回合
+
     } else if (w.type === 'defend') {
-        if (ex.draw)    score += ex.draw * 2;           // 每張牌 ≈ 2 (新平衡公式)
-        if (ex.energy)  score += ex.energy * 2;         // 每點能量 ≈ 2 (新平衡公式)
-        if (ex.reflect) score += ex.reflect * 1;        // 反傷 ≈ 1
+        score = w.value;
+        if (ex.draw)    score += ex.draw * 5;    // 抽牌：多1手牌≈多1次出牌≈5分
+        if (ex.energy)  score += ex.energy * 6;  // 能量：多1能量≈再出1張牌≈6分
+        if (ex.reflect) score += ex.reflect * 2; // 反傷：依持續回合與被攻頻率，保守估2分
+
     } else if (w.type === 'skill') {
-        let pt = 0;
-        if (ex.draw) pt += w.value;
-        else if (ex.bonusDraw) pt += ex.bonusDraw;
-        if (ex.energy) pt += w.value;
-        score = pt > 0 ? pt : w.value;
+        // energyDraw：同時獲得能量 + 抽牌（value=能量數, bonusDraw=抽牌數）
+        if (ex.energy && ex.bonusDraw) {
+            score = w.value * 7 + ex.bonusDraw * 6;
+        } else if (ex.draw) {
+            score = w.value * 6;   // 純抽牌：value=抽幾張
+        } else if (ex.energy) {
+            score = w.value * 7;   // 純能量：value=獲得幾點
+        } else {
+            score = w.value;       // 其他效果（治癒等）
+        }
+
     } else if (w.type === 'power') {
-        // 能力牌本質上是持久效果，直接用 value
+        // 能力牌是全戰鬥持久效果，倍率最高
+        if (ex.permAtk)    score = w.value * 8; // 永久力量：全戰每張攻擊都+N，約9次攻擊×N
+        else if (ex.thorns)     score = w.value * 6; // 荊棘：每次被攻≈10次，反傷N×10，保守估6
+        else if (ex.blockRegen) score = w.value * 4; // 護甲再生：每回合+N，約3-4回合共+3.5N
+        else                    score = w.value * 2; // 其他持久效果
     }
+
     return Math.round(score * 10) / 10;
 }
 
 // 稀有度順序
 const RARITY_ORDER = { common: 0, rare: 1, epic: 2, legendary: 3 };
 const RARITY_LABEL = { common: '普通', rare: '稀有', epic: '史詩', legendary: '傳說' };
-// 同類型、同費用下，每升一級稀有度的預期強度增幅
-const RARITY_STEP_MIN = { attack: 1, defend: 1, skill: 0, power: 0 };
+// 同類型、同費用下，每升一級稀有度的預期強度增幅（依新分數尺度調整）
+const RARITY_STEP_MIN = { attack: 3, defend: 3, skill: 4, power: 6 };
 
 function runBalanceCheck() {
     const allCards = getAllWords();
