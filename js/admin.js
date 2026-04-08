@@ -461,53 +461,75 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ===== 平衡性檢查 =====
 // 計算卡牌「有效強度分」
-// 設計參考殺戮尖塔經濟：1能量≈7分、1抽牌≈6分、1永久力量≈8分
+// 公式：輸出分數（含效率加成）× 能量費用乘數
+//
+// 【單位價值】
+//   攻擊：1 傷 = 1pt；多段×次數；傷害≥12 加25%效率、≥18 加50%效率；AoE ×1.8
+//   防禦：1 護甲 = 1pt；護甲≥10 加20%、≥18 加35%；draw/energy 附加效果
+//   技能：抽 0/1/2/3/4 張 = 0/4/8/13/19pt；能量 0/1/2/3 = 0/4/9/15pt（遞增）
+//   能力：永久攻擊×7、荊棘×5、護甲再生×6
+//
+// 【費用乘數】0⚡×1.4 / 1⚡×1.0 / 2⚡×0.8 / 3⚡×0.7
 function calcPowerScore(w) {
     const ex = w.extra || {};
-    let score = 0;
+
+    // 非線性遞增：一張牌做多件事比兩張牌各做一件更有效率
+    const drawScore   = [0, 4, 8, 13, 19]; // 抽 0/1/2/3/4 張
+    const energyScore = [0, 4, 9, 15];      // 獲得 0/1/2/3 能量
+
+    let raw = 0;
 
     if (w.type === 'attack') {
         const hits = ex.hits || 1;
-        score = w.value * hits;          // 多段傷害直接×次數
-        if (ex.aoe)        score *= 1.8; // 全體：平均打到1.8個敵人
-        if (ex.poison)     score += ex.poison * 3;      // 毒N層：期望 N×2.5 傷，取3保守估計
-        if (ex.vulnerable) score += ex.vulnerable * 5;  // 易傷每回合：讓我方輸出+50%，≈5分/回合
-        if (ex.weak)       score += ex.weak * 3;        // 虛弱每回合：敵攻-25%，≈3分/回合
+        let dmg = w.value * hits;
+        if (ex.aoe)        dmg *= 1.8;
+        if (ex.poison)     dmg += ex.poison * 2.5;   // 毒：持續傷害折現
+        if (ex.vulnerable) dmg += ex.vulnerable * 4; // 易傷：放大我方後續傷害
+        if (ex.weak)       dmg += ex.weak * 3;       // 虛弱：削弱敵方傷害
+        // 高傷效率門檻（一張牌頂超過標準兩張的傷害）
+        if      (dmg >= 18) dmg *= 1.5;
+        else if (dmg >= 12) dmg *= 1.25;
+        raw = dmg;
 
     } else if (w.type === 'defend') {
-        score = w.value;
-        if (ex.draw)    score += ex.draw * 5;    // 抽牌：多1手牌≈多1次出牌≈5分
-        if (ex.energy)  score += ex.energy * 6;  // 能量：多1能量≈再出1張牌≈6分
-        if (ex.reflect) score += ex.reflect * 2; // 反傷：依持續回合與被攻頻率，保守估2分
+        let blk = w.value;
+        if      (blk >= 18) blk *= 1.35;
+        else if (blk >= 10) blk *= 1.2;
+        raw = blk;
+        // defend 的 draw/energy 固定是數字
+        const d = typeof ex.draw   === 'number' ? ex.draw   : 0;
+        const e = typeof ex.energy === 'number' ? ex.energy : 0;
+        raw += d <= 4 ? drawScore[d]   : d * 4;
+        raw += e <= 3 ? energyScore[e] : e * 4;
+        if (ex.reflect) raw += ex.reflect * (ex.reflectTurns || 3);
 
     } else if (w.type === 'skill') {
-        // energyDraw：同時獲得能量 + 抽牌（value=能量數, bonusDraw=抽牌數）
-        if (ex.energy && ex.bonusDraw) {
-            score = w.value * 7 + ex.bonusDraw * 6;
-        } else if (ex.draw) {
-            score = w.value * 6;   // 純抽牌：value=抽幾張
-        } else if (ex.energy) {
-            score = w.value * 7;   // 純能量：value=獲得幾點
-        } else {
-            score = w.value;       // 其他效果（治癒等）
-        }
+        // skill 的 energy/draw 可為 true（主效果）或數字；value 是主效果數量
+        const eVal  = ex.energy ? (typeof ex.energy === 'number' ? ex.energy : w.value) : 0;
+        const dVal  = ex.draw   ? (typeof ex.draw   === 'number' ? ex.draw   : w.value) : 0;
+        const bdVal = ex.bonusDraw || 0;
+        raw += eVal  <= 3 ? energyScore[eVal]  : eVal  * 4;
+        raw += dVal  <= 4 ? drawScore[dVal]    : dVal  * 4;
+        raw += bdVal <= 4 ? drawScore[bdVal]   : bdVal * 4;
+        if (!ex.energy && !ex.draw) raw = w.value;
 
     } else if (w.type === 'power') {
-        // 能力牌是全戰鬥持久效果，倍率最高
-        if (ex.permAtk)    score = w.value * 6; // 永久力量：全戰攻擊次數×N，保守估6
-        else if (ex.thorns)     score = w.value * 5; // 荊棘：被攻次數×N，保守估5
-        else if (ex.blockRegen) score = w.value * 5; // 護甲再生：每回合+N，約3-5回合，估5
-        else                    score = w.value * 2; // 其他持久效果
+        if      (ex.permAtk)    raw = w.value * 7; // 永久攻擊力：每次攻擊都加
+        else if (ex.thorns)     raw = w.value * 5; // 荊棘反傷
+        else if (ex.blockRegen) raw = w.value * 6; // 每回合護甲回復
+        else                    raw = w.value * 2;
     }
 
-    return Math.round(score * 10) / 10;
+    // 能量費用效率乘數：0費免費最划算，3費吃掉全部能量
+    const costMult = [1.4, 1.0, 0.8, 0.7][w.cost] ?? 0.5;
+    return Math.round(raw * costMult * 10) / 10;
 }
 
 // 稀有度順序
 const RARITY_ORDER = { common: 0, rare: 1, epic: 2, legendary: 3 };
 const RARITY_LABEL = { common: '普通', rare: '稀有', epic: '史詩', legendary: '傳說' };
-// 同類型、同費用下，每升一級稀有度的預期強度增幅（依新分數尺度調整）
-const RARITY_STEP_MIN = { attack: 3, defend: 3, skill: 4, power: 6 };
+// 同類型、同費用下，每升一級稀有度至少需高出的分數
+const RARITY_STEP_MIN = { attack: 2, defend: 2, skill: 3, power: 8 };
 
 function runBalanceCheck() {
     const allCards = getAllWords();

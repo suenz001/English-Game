@@ -184,7 +184,7 @@ export const WORD_CARDS = [
       type: 'attack', cost: 2, value: 7, emoji: '🌪️',
       desc: '暴風攻擊，每次造成 {v} 點傷害，隨機攻擊兩次', extra: { hits: 2 } },
     { id: 'knife', en: 'knife', zh: '刀', difficulty: 2, rarity: 'rare',
-      type: 'attack', cost: 0, value: 3, emoji: '🔪',
+      type: 'attack', cost: 0, value: 6, emoji: '🔪',
       desc: '飛刀攻擊，造成 {v} 點傷害' },
     { id: 'angry', en: 'angry', zh: '生氣的', difficulty: 2, rarity: 'rare',
       type: 'attack', cost: 1, value: 4, emoji: '😡',
@@ -237,7 +237,7 @@ export const WORD_CARDS = [
       desc: '旋律指引，抽 {v} 張牌', extra: { draw: true } },
     { id: 'magic', en: 'magic', zh: '魔法', difficulty: 2, rarity: 'epic',
       type: 'skill', cost: 0, value: 2, emoji: '✨',
-      desc: '魔力充填，獲得 {v} 點能量', extra: { energy: true } },
+      desc: '魔力充填，獲得 {v} 點能量並抽 1 張牌', extra: { energy: true, bonusDraw: 1 } },
     { id: 'light', en: 'light', zh: '光', difficulty: 2, rarity: 'epic',
       type: 'skill', cost: 1, value: 4, emoji: '💡',
       desc: '光芒照耀，抽 {v} 張牌', extra: { draw: true } },
@@ -327,7 +327,7 @@ export const WORD_CARDS = [
       type: 'defend', cost: 1, value: 7, emoji: '⛑️',
       desc: '戰盔防禦，獲得 {v} 點護甲並獲得 1 點能量', extra: { energy: 1 } },
     { id: 'umbrella', en: 'umbrella', zh: '雨傘', difficulty: 3, rarity: 'epic',
-      type: 'defend', cost: 1, value: 6, emoji: '☂️',
+      type: 'defend', cost: 1, value: 7, emoji: '☂️',
       desc: '雨傘格擋，獲得 {v} 點護甲並獲得 1 點能量', extra: { energy: 1 } },
 
     // --- 技能牌 ---
