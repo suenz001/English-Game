@@ -10,8 +10,8 @@ const SIMILAR_KEY = 'vocabSpire_customSimilar';
 const ACTIVE_KEY = 'vocabSpire_activeCardIds';
 const IMAGES_KEY = 'vocabSpire_cardImages';
 
-function getPassword() { return localStorage.getItem(PWD_KEY) || '1234'; }
-function setPassword(p) { localStorage.setItem(PWD_KEY, p); }
+function getPassword() { return String(cloudGet(PWD_KEY, 'adminPwd') ?? '1234'); }
+function setPassword(p) { cloudSet(PWD_KEY, 'adminPwd', p); }
 function getCustomWords() { return cloudGet(WORDS_KEY, 'customWords') || []; }
 function saveCustomWords(w) { localStorage.setItem(WORDS_KEY, JSON.stringify(w)); cloudSet(WORDS_KEY, 'customWords', w); }
 function getCustomSimilar() { return cloudGet(SIMILAR_KEY, 'customSimilar') || {}; }
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ===== 問答模式初始化 =====
     function initQuizMode() {
-        const mode = localStorage.getItem('vocabSpire_quizMode') || 'card';
+        const mode = cloudGet('vocabSpire_quizMode', 'quizMode') || 'card';
         const radio = document.querySelector(`input[name="quiz-mode"][value="${mode}"]`);
         if (radio) radio.checked = true;
         updateQuizModeLabels(mode);
@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     document.querySelectorAll('input[name="quiz-mode"]').forEach(radio => {
         radio.addEventListener('change', () => {
-            localStorage.setItem('vocabSpire_quizMode', radio.value);
+            cloudSet('vocabSpire_quizMode', 'quizMode', radio.value);
             updateQuizModeLabels(radio.value);
         });
     });

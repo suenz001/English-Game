@@ -15,6 +15,8 @@ const ALL_KEYS = [
     ['vocabSpire_customSimilar',    'customSimilar'],
     ['vocabSpire_cardImages',       'cardImages'],
     ['vocabSpire_savedRun',         'savedRun'],
+    ['vocabSpire_adminPwd',         'adminPwd'],
+    ['vocabSpire_quizMode',         'quizMode'],
 ];
 
 // 登出時清除所有遊戲相關的 localStorage
@@ -152,6 +154,8 @@ export async function syncLocalToCloud() {
         ['vocabSpire_customWords', 'customWords'],
         ['vocabSpire_customSimilar', 'customSimilar'],
         ['vocabSpire_cardImages', 'cardImages'],
+        ['vocabSpire_adminPwd', 'adminPwd'],
+        ['vocabSpire_quizMode', 'quizMode'],
     ];
     const ref = doc(db, 'users', currentUser.uid);
     const snap = await getDoc(ref);
