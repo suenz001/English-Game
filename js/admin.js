@@ -494,9 +494,9 @@ function calcPowerScore(w) {
 
     } else if (w.type === 'power') {
         // 能力牌是全戰鬥持久效果，倍率最高
-        if (ex.permAtk)    score = w.value * 8; // 永久力量：全戰每張攻擊都+N，約9次攻擊×N
-        else if (ex.thorns)     score = w.value * 6; // 荊棘：每次被攻≈10次，反傷N×10，保守估6
-        else if (ex.blockRegen) score = w.value * 4; // 護甲再生：每回合+N，約3-4回合共+3.5N
+        if (ex.permAtk)    score = w.value * 6; // 永久力量：全戰攻擊次數×N，保守估6
+        else if (ex.thorns)     score = w.value * 5; // 荊棘：被攻次數×N，保守估5
+        else if (ex.blockRegen) score = w.value * 5; // 護甲再生：每回合+N，約3-5回合，估5
         else                    score = w.value * 2; // 其他持久效果
     }
 
