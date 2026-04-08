@@ -57,6 +57,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135d
 .pool-preview img, .pool-preview svg { width: 100%; height: 100%; object-fit: contain; }
 .pool-info { flex: 1; min-width: 0; }
 .pool-en { font-weight: 700; color: #f1c40f; font-size: 0.9em; }
+.pool-num { color: #7a6b8a; font-weight: 400; font-size: 0.85em; margin-right: 4px; }
 .pool-zh { color: #a78bba; font-size: 0.8em; margin-left: 6px; }
 .pool-meta { font-size: 0.7em; color: #7a6b8a; }
 .pool-img-actions { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
